@@ -1,0 +1,9 @@
+site_name: napari-karyotype
+site_description: A plugin to evaluate the relative chromosome sizes from karyotype images.
+site_author: Alexandr Dibrov
+
+theme: readthedocs
+
+
+pages:
+- Home: index.md
