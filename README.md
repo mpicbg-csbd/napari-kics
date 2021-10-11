@@ -23,8 +23,9 @@ https://napari.org/docs/plugins/index.html
 ## Installation
 
 You can install `napari-karyotype` via [pip]:
-
-    pip install napari-karyotype
+    git clone https://github.com/mpicbg-csbd/napari-karyotype
+    cd napari-karyotype
+    pip install -e .
 
 ## Contributing
 
