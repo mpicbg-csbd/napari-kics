@@ -1,0 +1,18 @@
+{
+    "segment":{
+        "inputs": {
+            "input_image": null
+        },
+        "threshold": {
+            "widget_type": "FloatSlider",
+            "min": 0.00,
+            "max": 1.00,
+            "step": 0.01,
+            "value": 0.5
+        },
+
+        "outputs": ["segmented"],
+
+        "auto_call": true
+    }
+}
