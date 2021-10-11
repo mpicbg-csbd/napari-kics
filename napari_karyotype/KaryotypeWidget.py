@@ -3,6 +3,7 @@ from qtpy.QtGui import QFont
 from qtpy.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt
 from qtpy import QtWidgets
+from qtpy.QtGui import QBrush
 
 import napari, json, os
 from napari_karyotype.utils import create_widget
@@ -13,6 +14,7 @@ import magicgui
 from qtpy import QtCore
 import pandas as pd
 import numpy as np
+from qtpy.QtGui import QColor
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -150,6 +152,7 @@ class KaryotypeWidget(QWidget):
             self.table = QtWidgets.QTableView()
             # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
             self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+
             self.table.clicked.connect(lambda e: print(f"selection changed to {e.row()}"))
 
             def change_handler():
@@ -161,13 +164,24 @@ class KaryotypeWidget(QWidget):
 
             self.summary_frame = pd.DataFrame()
 
+            self.label_layer = None
+
             def generate_new_model():
-                label_layer = self.viewer.layers.selection.active
-                labels = np.unique(label_layer.data)
-                
-                l = [(f"{ind}", labels[ind], label_layer.get_color(labels[ind])) for ind in range(len(labels))]
-                frame = pd.DataFrame(l)
-                self.table.setModel(MyTableModel(frame))
+
+                self.label_layer = self.viewer.layers.selection.active
+                labels = np.unique(self.label_layer.data)
+
+                l = [("", labels[ind], self.label_layer.get_color(labels[ind])) for ind in range(len(labels))]
+                self.summary_frame = pd.DataFrame(l)
+                self.table.setModel(MyTableModel(self.summary_frame))
+
+                def select_label_updater(e):
+                    sl = self.label_layer.selected_label
+                    ind = self.summary_frame.loc[self.summary_frame[1]==sl].index[0]
+                    print(f"selecting row {ind}")
+                    self.table.selectRow(ind)
+
+                self.label_layer.events.selected_label.connect(select_label_updater)
 
             def foo():
                 print("foo")
@@ -184,6 +198,9 @@ class KaryotypeWidget(QWidget):
 
 
 
+
+
+# https://www.pythonguis.com/faq/editing-pyqt-tableview/
 class MyTableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, pandas_dataframe):
@@ -200,6 +217,16 @@ class MyTableModel(QtCore.QAbstractTableModel):
 
     def data(self, QModelIndex, role=None):
 
+        if role == Qt.BackgroundRole and QModelIndex.column() == 0:
+            if QModelIndex.row() == 0:
+                color = np.array([0.0, 0.0, 0.0, 0.0])
+            else:
+                color = self.dataframe.iloc[QModelIndex.row()][2]
+            r,g,b,a = (255*color).astype(int)
+            # print(f"Color is {r,g,b,a}")
+            return QBrush(QColor(r,g,b, alpha=255))
+
+
         if role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
 
@@ -212,3 +239,19 @@ class MyTableModel(QtCore.QAbstractTableModel):
                 return self.dataframe.columns[p_int]
             else:
                 return p_int
+
+    def setData(self, index, value, role):
+        if role==Qt.EditRole:
+            self.dataframe.iloc[index.row(), index.column()] = value
+            return True
+        return False
+
+    def flags(self, index):
+        # label = Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsEditable
+        label = Qt.ItemIsEnabled | Qt.ItemIsEditable
+        rest = Qt.ItemIsSelectable|Qt.ItemIsEnabled
+
+        if index.column() == 0:
+            return label
+        else:
+            return rest
