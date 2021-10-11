@@ -2,13 +2,17 @@ from qtpy.QtWidgets import *
 from qtpy.QtGui import QFont
 from qtpy.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt
+from qtpy import QtWidgets
 
 import napari, json, os
 from napari_karyotype.utils import create_widget
 
 from pathlib import Path
-from napari_karyotype import functions
+import magicgui
 
+from qtpy import QtCore
+import pandas as pd
+import numpy as np
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -62,18 +66,72 @@ class KaryotypeWidget(QWidget):
 
             # widgets
             widgets = []
-            function_names = []
-            for (func_name, func_config) in config.items():
-                func = getattr(functions, f"{func_name}")
-                widgets.append(create_widget(func, func_config, self.state, self.viewer))
-                function_names.append(func_name)
+
+            # ----------------------------------------------------------------------
+            # thresholding widget
+            # ----------------------------------------------------------------------
+
+            def threshold(input_image, threshold_value=0.5):
+                from skimage.color import rgb2gray
+                if (len(input_image.shape) == 3 and input_image.shape[-1] == 3):
+                    img = rgb2gray(input_image)
+                else:
+                    img = input_image
+                return ((1 - img) > threshold_value).astype(int)
+
+            threshold_config = {
+
+                "threshold_value": {
+                    "widget_type": "FloatSlider",
+                    "min": 0.00,
+                    "max": 1.00,
+                    "step": 0.01,
+                    "value": 0.5
+                },
+                "auto_call": True
+            }
+
+            def threshold_updater(img_name, img, viewer):
+                # print(f"[update_layer]: updating layers with data of shape {img.shape} and name {img_name}")
+                try:
+                    viewer.layers[img_name].data = img
+                except KeyError:
+                    viewer.add_image(img, name=img_name, opacity=0.7, colormap="red")
+                    viewer.layers.select_previous()
+
+            def threshold_wrapper(threshold_value=0.5):
+                input_image = self.viewer.layers.selection.active.data
+                thresholded = threshold(input_image, threshold_value)
+                threshold_updater("thresholded", thresholded, self.viewer)
+
+            # ----------------------------------------------------------------------
+            # thresholding widget
+            # ----------------------------------------------------------------------
+
+            def label(input_image):
+                from scipy.ndimage import label
+                return label(input_image)[0]
+
+            label_config = {
+                "call_button": "Label"
+            }
+
+            def labelled_updater(img_name, img, viewer):
+                # print(f"[update_layer]: updating layers with data of shape {img.shape} and name {img_name}")
+                try:
+                    viewer.layers[img_name].data = img
+                except KeyError:
+                    viewer.add_labels(img, name=img_name)
 
 
-            [widget.layout().setAlignment(Qt.AlignTop) for widget in widgets]
+            def label_wrapper():
+                input_image = self.viewer.layers.selection.active.data
+                labelled_img = label(input_image).astype(int)
+                labelled_updater("labelled", labelled_img, self.viewer)
 
-            steps2widget_dict = {f"{i + 1}. {function_names[i].replace('_', ' ').title()}": widgets[i] for i in
-                                 range(len(widgets))}
 
+            widgets.append(magicgui.magicgui(threshold_wrapper, **threshold_config).native)
+            widgets.append(magicgui.magicgui(label_wrapper, **label_config).native)
 
             self.curr = 0
 
@@ -82,3 +140,75 @@ class KaryotypeWidget(QWidget):
             [self.layout.addWidget(widget) for widget in widgets]
 
             self.layout.setAlignment(Qt.AlignTop)
+
+            # ----------------------------------------------------------------------
+            # table widget
+            # ----------------------------------------------------------------------
+
+
+
+            self.table = QtWidgets.QTableView()
+            # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
+            self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+            self.table.clicked.connect(lambda e: print(f"selection changed to {e.row()}"))
+
+            def change_handler():
+                pass
+
+            self.table.clicked.connect(change_handler)
+
+            self.generate_table_btn = QtWidgets.QPushButton("Generate Table")
+
+            self.summary_frame = pd.DataFrame()
+
+            def generate_new_model():
+                label_layer = self.viewer.layers.selection.active
+                labels = np.unique(label_layer.data)
+                
+                l = [(f"{ind}", labels[ind], label_layer.get_color(labels[ind])) for ind in range(len(labels))]
+                frame = pd.DataFrame(l)
+                self.table.setModel(MyTableModel(frame))
+
+            def foo():
+                print("foo")
+
+            self.generate_table_btn.clicked.connect(foo)
+            # self.table.setModel(MyTableModel(loop_data))
+
+            self.layout.addWidget(self.generate_table_btn)
+            self.layout.addWidget(self.table)
+            self.generate_table_btn.clicked.connect(generate_new_model)
+
+
+
+
+
+
+class MyTableModel(QtCore.QAbstractTableModel):
+
+    def __init__(self, pandas_dataframe):
+        super().__init__()
+
+        self.dataframe = pandas_dataframe
+
+
+    def rowCount(self, parent=None, *args, **kwargs):
+        return self.dataframe.shape[0]
+
+    def columnCount(self, parent=None, *args, **kwargs):
+        return self.dataframe.shape[1]
+
+    def data(self, QModelIndex, role=None):
+
+        if role != QtCore.Qt.DisplayRole:
+            return QtCore.QVariant()
+
+        return str(self.dataframe.iloc[QModelIndex.row()][QModelIndex.column()])
+
+    def headerData(self, p_int, Qt_Orientation, role=None):
+
+        if role == QtCore.Qt.DisplayRole:
+            if Qt_Orientation == QtCore.Qt.Horizontal:
+                return self.dataframe.columns[p_int]
+            else:
+                return p_int
