@@ -157,25 +157,30 @@ class KaryotypeWidget(QWidget):
             # self.table.clicked.connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
             # self.table.dragMoveEvent().connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
 
-            def table_key_press_event(e):
+            def table_key_press_event(viewer):
+
+
+                indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                print(f"selection indices are {indices}")
+
+                labels = [self.summary_frame.iloc[i][1] for i in indices]
+                print(f"the corresponding labels are {labels}")
+
+
+                coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
+                print(f"coords to fill are {coords_to_fill}")
+
+                # print(self.res)
+
+                [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
+
+            def table_key_press_event_wrapper(e):
                 if e.key() == Qt.Key_Backspace:
-
-                    indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                    print(f"selection indices are {indices}")
-
-                    labels = [self.summary_frame.iloc[i][1] for i in indices]
-                    print(f"the corresponding labels are {labels}")
+                    table_key_press_event(None)
 
 
-                    coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
-                    print(f"coords to fill are {coords_to_fill}")
-
-                    print(self.res)
-
-                    [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
-
-
-            self.table.keyPressEvent = table_key_press_event
+            self.table.keyPressEvent = table_key_press_event_wrapper
+            self.viewer.bind_key("Backspace", table_key_press_event)
 
             def change_handler():
                 pass
@@ -198,7 +203,7 @@ class KaryotypeWidget(QWidget):
                 # counts = [r.area for r in rp]
                 # self.coords = [r.coords for r in rp]
 
-                self.res = np.array([(r.label-1, r.area, r.coords[0]) for r in rp])
+                self.res = np.array([(r.label-1, r.area, r.coords[0]) for r in rp], dtype=object)
                 self.res = np.array(sorted(self.res, key=lambda x: x[0]))
                 # print(res)
 
