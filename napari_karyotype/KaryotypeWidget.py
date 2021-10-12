@@ -119,10 +119,10 @@ class KaryotypeWidget(QWidget):
             }
 
             def labelled_updater(img_name, img, viewer):
-                # print(f"[update_layer]: updating layers with data of shape {img.shape} and name {img_name}")
-                try:
-                    viewer.layers[img_name].data = img
-                except KeyError:
+                # # print(f"[update_layer]: updating layers with data of shape {img.shape} and name {img_name}")
+                # try:
+                #     viewer.layers[img_name].data = img
+                # except KeyError:
                     viewer.add_labels(img, name=img_name)
 
 
@@ -153,7 +153,29 @@ class KaryotypeWidget(QWidget):
             # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
             self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
-            self.table.clicked.connect(lambda e: print(f"selection changed to {e.row()}"))
+            # self.table.clicked.connect(lambda e: print(f"selection changed to {e.row()}"))
+            # self.table.clicked.connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
+            # self.table.dragMoveEvent().connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
+
+            def table_key_press_event(e):
+                if e.key() == Qt.Key_Backspace:
+
+                    indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                    print(f"selection indices are {indices}")
+
+                    labels = [self.summary_frame.iloc[i][1] for i in indices]
+                    print(f"the corresponding labels are {labels}")
+
+
+                    coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
+                    print(f"coords to fill are {coords_to_fill}")
+
+                    print(self.res)
+
+                    [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
+
+
+            self.table.keyPressEvent = table_key_press_event
 
             def change_handler():
                 pass
@@ -166,22 +188,46 @@ class KaryotypeWidget(QWidget):
 
             self.label_layer = None
 
+
+            from skimage.measure import regionprops
+
+            def upd_table():
+                # labels, counts = np.unique(self.label_layer.data, return_counts=True)
+                rp = regionprops(self.label_layer.data+1)
+                # self.labels = [r.label-1 for r in rp]
+                # counts = [r.area for r in rp]
+                # self.coords = [r.coords for r in rp]
+
+                self.res = np.array([(r.label-1, r.area, r.coords[0]) for r in rp])
+                self.res = np.array(sorted(self.res, key=lambda x: x[0]))
+                # print(res)
+
+
+
+                # l = [("", labels[ind], self.label_layer.get_color(labels[ind])) for ind in range(len(labels))]
+                l = [("", self.res[ind,0], self.res[ind,1]) for ind in range(len(self.res))]
+                colors = [self.label_layer.get_color(label) for label in self.res[:,0]]
+                self.summary_frame = pd.DataFrame(l)
+                self.table.setModel(MyTableModel(self.summary_frame, colors))
+
+
+
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
-                labels = np.unique(self.label_layer.data)
-
-                l = [("", labels[ind], self.label_layer.get_color(labels[ind])) for ind in range(len(labels))]
-                self.summary_frame = pd.DataFrame(l)
-                self.table.setModel(MyTableModel(self.summary_frame))
+                upd_table()
+                self.label_layer.events.set_data.connect(lambda x: upd_table())
 
                 def select_label_updater(e):
                     sl = self.label_layer.selected_label
-                    ind = self.summary_frame.loc[self.summary_frame[1]==sl].index[0]
+                    ind = self.summary_frame.loc[self.summary_frame[1] == sl].index[0]
                     print(f"selecting row {ind}")
                     self.table.selectRow(ind)
 
                 self.label_layer.events.selected_label.connect(select_label_updater)
+
+
+
 
             def foo():
                 print("foo")
@@ -203,10 +249,11 @@ class KaryotypeWidget(QWidget):
 # https://www.pythonguis.com/faq/editing-pyqt-tableview/
 class MyTableModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, pandas_dataframe):
+    def __init__(self, pandas_dataframe, colors):
         super().__init__()
 
         self.dataframe = pandas_dataframe
+        self.colors = colors
 
 
     def rowCount(self, parent=None, *args, **kwargs):
@@ -221,10 +268,11 @@ class MyTableModel(QtCore.QAbstractTableModel):
             if QModelIndex.row() == 0:
                 color = np.array([0.0, 0.0, 0.0, 0.0])
             else:
-                color = self.dataframe.iloc[QModelIndex.row()][2]
+                # color = self.dataframe.iloc[QModelIndex.row()][2]
+                color = self.colors[QModelIndex.row()]
             r,g,b,a = (255*color).astype(int)
             # print(f"Color is {r,g,b,a}")
-            return QBrush(QColor(r,g,b, alpha=255))
+            return QBrush(QColor(r,g,b, alpha=a))
 
 
         if role != QtCore.Qt.DisplayRole:
@@ -252,6 +300,8 @@ class MyTableModel(QtCore.QAbstractTableModel):
         rest = Qt.ItemIsSelectable|Qt.ItemIsEnabled
 
         if index.column() == 0:
-            return label
+            return Qt.ItemIsEnabled
+        elif index.column() == 1:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
-            return rest
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
