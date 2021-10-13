@@ -16,6 +16,8 @@ import pandas as pd
 import numpy as np
 from qtpy.QtGui import QColor
 
+from napari.qt import thread_worker
+
 # ------------------------------------------------------------------------
 # Main pipeline widget
 # ------------------------------------------------------------------------
@@ -196,6 +198,8 @@ class KaryotypeWidget(QWidget):
 
             from skimage.measure import regionprops
 
+
+            @thread_worker
             def upd_table():
                 # labels, counts = np.unique(self.label_layer.data, return_counts=True)
                 rp = regionprops(self.label_layer.data+1)
@@ -213,15 +217,31 @@ class KaryotypeWidget(QWidget):
                 l = [("", self.res[ind,0], self.res[ind,1]) for ind in range(len(self.res))]
                 colors = [self.label_layer.get_color(label) for label in self.res[:,0]]
                 self.summary_frame = pd.DataFrame(l)
-                self.table.setModel(MyTableModel(self.summary_frame, colors))
+                # self.table.setModel(MyTableModel(self.summary_frame, colors))
 
+                return self.summary_frame, colors
+
+
+            def upd_table_widget(args):
+                self.table.setModel(MyTableModel(args[0], args[1]))
+
+            def abcde(args):
+                print(args)
+
+            def launch_upd_worker():
+                worker = upd_table()
+                worker.returned.connect(upd_table_widget)
+                worker.start()
 
 
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
-                upd_table()
-                self.label_layer.events.set_data.connect(lambda x: upd_table())
+                # upd_table()
+                launch_upd_worker()
+                # self.label_layer.events.set_data.connect(lambda x: upd_table())
+                self.label_layer.events.set_data.connect(lambda x: launch_upd_worker())
+                # self.label_layer.events.data.connect(lambda x: upd_table())
 
                 def select_label_updater(e):
                     sl = self.label_layer.selected_label
