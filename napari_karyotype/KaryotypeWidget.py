@@ -17,6 +17,7 @@ import numpy as np
 from qtpy.QtGui import QColor
 
 from napari.qt import thread_worker
+from copy import deepcopy
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -152,6 +153,7 @@ class KaryotypeWidget(QWidget):
 
 
             self.table = QtWidgets.QTableView()
+            self.table.setSortingEnabled(True)
             # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
             self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
@@ -165,7 +167,7 @@ class KaryotypeWidget(QWidget):
                 indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
                 print(f"selection indices are {indices}")
 
-                labels = [self.summary_frame.iloc[i][1] for i in indices]
+                labels = [self.table.model().dataframe.iloc[i][1] for i in indices]
                 print(f"the corresponding labels are {labels}")
 
 
@@ -196,6 +198,16 @@ class KaryotypeWidget(QWidget):
             self.label_layer = None
 
 
+
+            # self.table.sortByColumn()
+            # self.table.setSortingEnabled(True)
+            # self.table.sor
+
+            # self.table.horizontalHeader().setSortIndicator(2, Qt.AscendingOrder )
+            # self.table.setSortingEnabled(True)
+            # self.table.sortByColumn(2, Qt.AscendingOrder)
+
+
             from skimage.measure import regionprops
 
 
@@ -224,6 +236,8 @@ class KaryotypeWidget(QWidget):
 
             def upd_table_widget(args):
                 self.table.setModel(MyTableModel(args[0], args[1]))
+                self.table.sortByColumn(2, Qt.DescendingOrder)
+                # self.table.
 
             def abcde(args):
                 print(args)
@@ -237,15 +251,21 @@ class KaryotypeWidget(QWidget):
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
-                # upd_table()
                 launch_upd_worker()
-                # self.label_layer.events.set_data.connect(lambda x: upd_table())
                 self.label_layer.events.set_data.connect(lambda x: launch_upd_worker())
-                # self.label_layer.events.data.connect(lambda x: upd_table())
+
+                def synchronize_selection(e):
+                     indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                     self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
+
+                self.table.clicked.connect(synchronize_selection)
 
                 def select_label_updater(e):
                     sl = self.label_layer.selected_label
-                    ind = self.summary_frame.loc[self.summary_frame[1] == sl].index[0]
+                    print(f"selecting label {sl}")
+                    # ind = self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl].index[0]
+                    ind = list(self.table.model().dataframe[1]).index(sl)
+                    print(self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl])
                     print(f"selecting row {ind}")
                     self.table.selectRow(ind)
 
@@ -279,6 +299,10 @@ class MyTableModel(QtCore.QAbstractTableModel):
 
         self.dataframe = pandas_dataframe
         self.colors = colors
+        self.colors_ordered = deepcopy(self.colors)
+        # self.dataframe.insert(3, "colors", self.colors)
+
+
 
 
     def rowCount(self, parent=None, *args, **kwargs):
@@ -290,11 +314,10 @@ class MyTableModel(QtCore.QAbstractTableModel):
     def data(self, QModelIndex, role=None):
 
         if role == Qt.BackgroundRole and QModelIndex.column() == 0:
-            if QModelIndex.row() == 0:
+
+            color = self.colors_ordered[QModelIndex.row()]
+            if color is None:
                 color = np.array([0.0, 0.0, 0.0, 0.0])
-            else:
-                # color = self.dataframe.iloc[QModelIndex.row()][2]
-                color = self.colors[QModelIndex.row()]
             r,g,b,a = (255*color).astype(int)
             # print(f"Color is {r,g,b,a}")
             return QBrush(QColor(r,g,b, alpha=a))
@@ -302,6 +325,7 @@ class MyTableModel(QtCore.QAbstractTableModel):
 
         if role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
+
 
         return str(self.dataframe.iloc[QModelIndex.row()][QModelIndex.column()])
 
@@ -330,3 +354,17 @@ class MyTableModel(QtCore.QAbstractTableModel):
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
         else:
             return Qt.ItemIsEnabled | Qt.ItemIsSelectable
+
+    # https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
+    def sort(self, column, order):
+
+        self.layoutAboutToBeChanged.emit()
+
+        self.merged_frame = pd.concat([self.dataframe, pd.DataFrame({"colors": self.colors})], axis=1)
+        self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order==Qt.AscendingOrder))
+        self.dataframe = self.merged_frame.iloc[:,:-1]
+        self.colors_ordered = list(self.merged_frame.iloc[:,-1])
+
+        print(self.dataframe)
+
+        self.layoutChanged.emit()
