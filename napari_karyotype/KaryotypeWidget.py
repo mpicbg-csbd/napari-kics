@@ -159,14 +159,18 @@ class KaryotypeWidget(QWidget):
 
             def table_key_press_event(viewer):
 
-                indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                print(f"selection indices are {indices}")
+                # indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                # print(f"selection indices are {indices}")
+                #
+                # labels = [self.table.model().dataframe.iloc[i][1] for i in indices]
+                # print(f"the corresponding labels are {labels}")
+                #
+                # coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
+                # print(f"coords to fill are {coords_to_fill}")
 
-                labels = [self.table.model().dataframe.iloc[i][1] for i in indices]
-                print(f"the corresponding labels are {labels}")
 
-                coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
-                print(f"coords to fill are {coords_to_fill}")
+                coords = [np.where(self.label_layer.data==label) for label in self.table.model().dataframe.index[self.table.selectedIndexes()]]
+                coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
 
                 # print(self.res)
 
@@ -190,13 +194,6 @@ class KaryotypeWidget(QWidget):
 
             self.label_layer = None
 
-            # self.table.sortByColumn()
-            # self.table.setSortingEnabled(True)
-            # self.table.sor
-
-            # self.table.horizontalHeader().setSortIndicator(2, Qt.AscendingOrder )
-            # self.table.setSortingEnabled(True)
-            # self.table.sortByColumn(2, Qt.AscendingOrder)
 
             self.history_queue_length = 0
             self.history_last_step_length = 0
@@ -266,9 +263,20 @@ class KaryotypeWidget(QWidget):
                 print(f"res_dict is {res_dict}")
 
                 for (label, increment) in res_dict.items():
-                    # self.table.model().setData(QModelIn)
-                    self.table.model().dataframe.loc[label, 2] += increment
+
+                    if not(label in self.table.model().dataframe.index):
+                        print(f"label {label} is not in the dataframe")
+                        self.table.model().dataframe = self.table.model().dataframe.append(pd.DataFrame([["", label, increment]], index=[label]))
+                        print(f"now it is \n{self.table.model().dataframe}")
+
+                    else:
+                        self.table.model().dataframe.loc[label, 2] += increment
+
+                        if (self.table.model().dataframe.loc[label, 2] == 0):
+                            self.table.model().dataframe.drop(label, inplace=True)
+                            print(f"label {label} is set to 0")
                     self.table.update()
+                    self.table.sortByColumn(2, Qt.DescendingOrder)
 
             from skimage.measure import regionprops
             @thread_worker
@@ -292,7 +300,8 @@ class KaryotypeWidget(QWidget):
                 return self.summary_frame, colors
 
             def upd_table_widget(args):
-                self.table.setModel(MyTableModel(args[0], args[1]))
+                # self.table.setModel(MyTableModel(args[0], args[1]))
+                self.table.setModel(MyTableModel(args[0], self.label_layer.get_color))
                 self.table.sortByColumn(2, Qt.DescendingOrder)
 
             def launch_upd_worker():
@@ -338,12 +347,14 @@ class KaryotypeWidget(QWidget):
 # https://www.pythonguis.com/faq/editing-pyqt-tableview/
 class MyTableModel(QtCore.QAbstractTableModel):
 
-    def __init__(self, pandas_dataframe, colors):
+    # def __init__(self, pandas_dataframe, colors):
+    def __init__(self, pandas_dataframe, get_color):
         super().__init__()
 
         self.dataframe = pandas_dataframe
-        self.colors = colors
-        self.colors_ordered = deepcopy(self.colors)
+        self.get_color = get_color
+        # self.colors = colors
+        # self.colors_ordered = deepcopy(self.colors)
         # self.dataframe.insert(3, "colors", self.colors)
 
     def rowCount(self, parent=None, *args, **kwargs):
@@ -356,7 +367,8 @@ class MyTableModel(QtCore.QAbstractTableModel):
 
         if role == Qt.BackgroundRole and QModelIndex.column() == 0:
 
-            color = self.colors_ordered[QModelIndex.row()]
+            # color = self.colors_ordered[QModelIndex.row()]
+            color = self.get_color(self.dataframe.index[QModelIndex.row()])
             if color is None:
                 color = np.array([0.0, 0.0, 0.0, 0.0])
             r, g, b, a = (255 * color).astype(int)
@@ -398,12 +410,12 @@ class MyTableModel(QtCore.QAbstractTableModel):
     def sort(self, column, order):
 
         self.layoutAboutToBeChanged.emit()
-
-        self.merged_frame = pd.concat([self.dataframe, pd.DataFrame({"colors": self.colors})], axis=1)
-        self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order == Qt.AscendingOrder))
-        self.dataframe = self.merged_frame.iloc[:, :-1]
-        self.colors_ordered = list(self.merged_frame.iloc[:, -1])
-
+        #
+        # self.merged_frame = pd.concat([self.dataframe, pd.DataFrame({"colors": self.colors})], axis=1)
+        # self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order == Qt.AscendingOrder))
+        # self.dataframe = self.merged_frame.iloc[:, :-1]
+        # self.colors_ordered = list(self.merged_frame.iloc[:, -1])
+        self.dataframe.sort_values(by=column, ascending=(order == Qt.AscendingOrder), inplace=True)
         print(self.dataframe)
 
         self.layoutChanged.emit()
