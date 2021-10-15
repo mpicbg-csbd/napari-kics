@@ -19,6 +19,7 @@ from qtpy.QtGui import QColor
 from napari.qt import thread_worker
 from copy import deepcopy
 
+
 # ------------------------------------------------------------------------
 # Main pipeline widget
 # ------------------------------------------------------------------------
@@ -57,14 +58,13 @@ class KaryotypeWidget(QWidget):
         self.head_layout.addLayout(label_layout)
         self.head_layout.setAlignment(Qt.AlignBottom)
 
-
         # state
         self.state = {}
 
         self.generate_gui_from_config()
 
-
-    def generate_gui_from_config(self, config_file_path=f"{Path(__file__).absolute().parent}/resources/config/config.json"):
+    def generate_gui_from_config(self,
+                                 config_file_path=f"{Path(__file__).absolute().parent}/resources/config/config.json"):
 
         with open(config_file_path, 'r') as config_file:
             config = json.load(config_file)
@@ -126,14 +126,12 @@ class KaryotypeWidget(QWidget):
                 # try:
                 #     viewer.layers[img_name].data = img
                 # except KeyError:
-                    viewer.add_labels(img, name=img_name)
-
+                viewer.add_labels(img, name=img_name)
 
             def label_wrapper():
                 input_image = self.viewer.layers.selection.active.data
                 labelled_img = label(input_image).astype(int)
                 labelled_updater("labelled", labelled_img, self.viewer)
-
 
             widgets.append(magicgui.magicgui(threshold_wrapper, **threshold_config).native)
             widgets.append(magicgui.magicgui(label_wrapper, **label_config).native)
@@ -150,8 +148,6 @@ class KaryotypeWidget(QWidget):
             # table widget
             # ----------------------------------------------------------------------
 
-
-
             self.table = QtWidgets.QTableView()
             self.table.setSortingEnabled(True)
             # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
@@ -163,13 +159,11 @@ class KaryotypeWidget(QWidget):
 
             def table_key_press_event(viewer):
 
-
                 indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
                 print(f"selection indices are {indices}")
 
                 labels = [self.table.model().dataframe.iloc[i][1] for i in indices]
                 print(f"the corresponding labels are {labels}")
-
 
                 coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
                 print(f"coords to fill are {coords_to_fill}")
@@ -181,7 +175,6 @@ class KaryotypeWidget(QWidget):
             def table_key_press_event_wrapper(e):
                 if e.key() == Qt.Key_Backspace:
                     table_key_press_event(None)
-
 
             self.table.keyPressEvent = table_key_press_event_wrapper
             self.viewer.bind_key("Backspace", table_key_press_event)
@@ -197,9 +190,6 @@ class KaryotypeWidget(QWidget):
 
             self.label_layer = None
 
-
-
-
             # self.table.sortByColumn()
             # self.table.setSortingEnabled(True)
             # self.table.sor
@@ -208,56 +198,118 @@ class KaryotypeWidget(QWidget):
             # self.table.setSortingEnabled(True)
             # self.table.sortByColumn(2, Qt.AscendingOrder)
 
+            self.history_queue_length = 0
+            self.history_last_step_length = 0
+
+            def process_history_step():
+
+                # print(f"undo history is {self.label_layer._undo_history}")
+
+                print(f"")
+
+                if len(self.label_layer._undo_history) > self.history_queue_length:
+                    factor = +1
+                    step = self.label_layer._undo_history[-1]
+                    self.history_queue_length = len(self.label_layer._undo_history)
+                    self.history_last_step_length = len(step)
+                    print(f"self history last step length is {self.history_last_step_length}")
+
+                elif len(self.label_layer._undo_history) < self.history_queue_length:
+                    factor = -1
+                    step = self.label_layer._redo_history[-1]
+                    self.history_queue_length = len(self.label_layer._undo_history)
+                    self.history_last_step_length = 0
+
+                elif len(self.label_layer._undo_history) != 0 and len(
+                        self.label_layer._undo_history[-1]) > self.history_last_step_length:
+                    factor = +1
+                    step_ = self.label_layer._undo_history[-1]
+                    new_length = len(step_)
+                    step = step_[self.history_last_step_length:new_length]
+                    self.history_queue_length = len(self.label_layer._undo_history)
+                    self.history_last_step_length = new_length
+                    print(f"self history last step length is {self.history_last_step_length}")
+
+
+                else:
+                    return {}
+
+                # print(f"step is {step}")
+
+                res_dict = {}
+
+                for sub_step in step:
+
+                    labels_removed, labels_remove_counts = np.unique(sub_step[1], return_counts=True)
+                    label_added = sub_step[2]
+
+                    for ind, label in enumerate(labels_removed):
+
+                        if label in res_dict:
+                            res_dict[label] += -factor * labels_remove_counts[ind]
+                        else:
+                            res_dict[label] = -factor * labels_remove_counts[ind]
+
+                    if label_added in res_dict:
+                        res_dict[label_added] += factor * np.sum(labels_remove_counts)
+                    else:
+                        res_dict[label_added] = factor * np.sum(labels_remove_counts)
+
+                    print(f"dict at the current substep: {res_dict}")
+
+                return res_dict
+
+            def upd_table_new():
+
+                res_dict = process_history_step()
+
+                print(f"res_dict is {res_dict}")
+
+                for (label, increment) in res_dict.items():
+                    # self.table.model().setData(QModelIn)
+                    self.table.model().dataframe.loc[label, 2] += increment
+                    self.table.update()
 
             from skimage.measure import regionprops
-
-
             @thread_worker
             def upd_table():
                 # labels, counts = np.unique(self.label_layer.data, return_counts=True)
-                rp = regionprops(self.label_layer.data+1)
+                rp = regionprops(self.label_layer.data + 1)
                 # self.labels = [r.label-1 for r in rp]
                 # counts = [r.area for r in rp]
                 # self.coords = [r.coords for r in rp]
 
-                self.res = np.array([(r.label-1, r.area, r.coords[0]) for r in rp], dtype=object)
+                self.res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
                 self.res = np.array(sorted(self.res, key=lambda x: x[0]))
                 # print(res)
 
-
-
                 # l = [("", labels[ind], self.label_layer.get_color(labels[ind])) for ind in range(len(labels))]
-                l = [("", self.res[ind,0], self.res[ind,1]) for ind in range(len(self.res))]
-                colors = [self.label_layer.get_color(label) for label in self.res[:,0]]
+                l = [("", self.res[ind, 0], self.res[ind, 1]) for ind in range(len(self.res))]
+                colors = [self.label_layer.get_color(label) for label in self.res[:, 0]]
                 self.summary_frame = pd.DataFrame(l)
                 # self.table.setModel(MyTableModel(self.summary_frame, colors))
 
                 return self.summary_frame, colors
 
-
             def upd_table_widget(args):
                 self.table.setModel(MyTableModel(args[0], args[1]))
                 self.table.sortByColumn(2, Qt.DescendingOrder)
-                # self.table.
-
-            def abcde(args):
-                print(args)
 
             def launch_upd_worker():
                 worker = upd_table()
                 worker.returned.connect(upd_table_widget)
                 worker.start()
 
-
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
                 launch_upd_worker()
-                self.label_layer.events.set_data.connect(lambda x: launch_upd_worker())
+                # self.label_layer.events.set_data.connect(lambda x: launch_upd_worker())
+                self.label_layer.events.set_data.connect(lambda x: upd_table_new())
 
                 def synchronize_selection(e):
-                     indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                     self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
+                    indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                    self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
 
                 self.table.clicked.connect(synchronize_selection)
 
@@ -272,9 +324,6 @@ class KaryotypeWidget(QWidget):
 
                 self.label_layer.events.selected_label.connect(select_label_updater)
 
-
-
-
             def foo():
                 print("foo")
 
@@ -284,12 +333,6 @@ class KaryotypeWidget(QWidget):
             self.layout.addWidget(self.generate_table_btn)
             self.layout.addWidget(self.table)
             self.generate_table_btn.clicked.connect(generate_new_model)
-
-
-
-
-
-
 
 
 # https://www.pythonguis.com/faq/editing-pyqt-tableview/
@@ -302,9 +345,6 @@ class MyTableModel(QtCore.QAbstractTableModel):
         self.colors = colors
         self.colors_ordered = deepcopy(self.colors)
         # self.dataframe.insert(3, "colors", self.colors)
-
-
-
 
     def rowCount(self, parent=None, *args, **kwargs):
         return self.dataframe.shape[0]
@@ -319,14 +359,12 @@ class MyTableModel(QtCore.QAbstractTableModel):
             color = self.colors_ordered[QModelIndex.row()]
             if color is None:
                 color = np.array([0.0, 0.0, 0.0, 0.0])
-            r,g,b,a = (255*color).astype(int)
+            r, g, b, a = (255 * color).astype(int)
             # print(f"Color is {r,g,b,a}")
-            return QBrush(QColor(r,g,b, alpha=a))
-
+            return QBrush(QColor(r, g, b, alpha=a))
 
         if role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
-
 
         return str(self.dataframe.iloc[QModelIndex.row()][QModelIndex.column()])
 
@@ -339,7 +377,7 @@ class MyTableModel(QtCore.QAbstractTableModel):
                 return p_int
 
     def setData(self, index, value, role):
-        if role==Qt.EditRole:
+        if role == Qt.EditRole:
             self.dataframe.iloc[index.row(), index.column()] = value
             return True
         return False
@@ -347,7 +385,7 @@ class MyTableModel(QtCore.QAbstractTableModel):
     def flags(self, index):
         # label = Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsEditable
         label = Qt.ItemIsEnabled | Qt.ItemIsEditable
-        rest = Qt.ItemIsSelectable|Qt.ItemIsEnabled
+        rest = Qt.ItemIsSelectable | Qt.ItemIsEnabled
 
         if index.column() == 0:
             return Qt.ItemIsEnabled
@@ -362,9 +400,9 @@ class MyTableModel(QtCore.QAbstractTableModel):
         self.layoutAboutToBeChanged.emit()
 
         self.merged_frame = pd.concat([self.dataframe, pd.DataFrame({"colors": self.colors})], axis=1)
-        self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order==Qt.AscendingOrder))
-        self.dataframe = self.merged_frame.iloc[:,:-1]
-        self.colors_ordered = list(self.merged_frame.iloc[:,-1])
+        self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order == Qt.AscendingOrder))
+        self.dataframe = self.merged_frame.iloc[:, :-1]
+        self.colors_ordered = list(self.merged_frame.iloc[:, -1])
 
         print(self.dataframe)
 
