@@ -199,6 +199,7 @@ class KaryotypeWidget(QWidget):
 
 
 
+
             # self.table.sortByColumn()
             # self.table.setSortingEnabled(True)
             # self.table.sor
