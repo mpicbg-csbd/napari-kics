@@ -168,17 +168,23 @@ class KaryotypeWidget(QWidget):
                 # coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
                 # print(f"coords to fill are {coords_to_fill}")
 
-
-                coords = [np.where(self.label_layer.data==label) for label in self.table.model().dataframe.index[self.table.selectedIndexes()]]
+                indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
+                coords = [np.where(self.label_layer.data==label) for label in self.table.model().dataframe.index[indices]]
                 coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
 
                 # print(self.res)
 
                 [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
 
+
+                self.table.selectRow(np.min(indices)-1)
+
+
+
             def table_key_press_event_wrapper(e):
                 if e.key() == Qt.Key_Backspace:
                     table_key_press_event(None)
+                return QTableWidget.keyPressEvent(self.table, e)
 
             self.table.keyPressEvent = table_key_press_event_wrapper
             self.viewer.bind_key("Backspace", table_key_press_event)
