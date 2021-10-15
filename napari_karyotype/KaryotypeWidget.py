@@ -324,7 +324,8 @@ class KaryotypeWidget(QWidget):
 
                 def synchronize_selection(e):
                     indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                    self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
+                    # self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
+                    self.label_layer.selected_label = self.table.model().dataframe.index[indices[0]]
 
                 self.table.clicked.connect(synchronize_selection)
 
@@ -332,8 +333,9 @@ class KaryotypeWidget(QWidget):
                     sl = self.label_layer.selected_label
                     print(f"selecting label {sl}")
                     # ind = self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl].index[0]
-                    ind = list(self.table.model().dataframe[1]).index(sl)
-                    print(self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl])
+                    # ind = list(self.table.model().dataframe[1]).index(sl)
+                    ind = self.table.model().dataframe.index.get_loc(sl)
+                    # print(self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl])
                     print(f"selecting row {ind}")
                     self.table.selectRow(ind)
 
