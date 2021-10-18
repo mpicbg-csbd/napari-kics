@@ -347,7 +347,31 @@ class KaryotypeWidget(QWidget):
             self.generate_table_btn.clicked.connect(foo)
             # self.table.setModel(MyTableModel(loop_data))
 
+            # -------------------------------------------------------
+            # ordering
+            # -------------------------------------------------------
+            order_button = QPushButton("Adjust labelling order")
+            order_button.setCheckable(True)
+            st = order_button.style()
+
+            def change_appearance(e):
+                if order_button.isChecked():
+                    order_button.setDown(True)
+                    print(f"order button is {order_button.isChecked()}")
+                else:
+                    order_button.setDown(False)
+                    print(f"order button is {order_button.isChecked()}")
+
+
+            order_button.clicked.connect(change_appearance)
+
+
+            # -------------------------------------------------------
+            # adding widgets to the global layout
+            # -------------------------------------------------------
             self.layout.addWidget(self.generate_table_btn)
+
+            self.layout.addWidget(order_button)
             self.layout.addWidget(self.table)
             self.generate_table_btn.clicked.connect(generate_new_model)
 
