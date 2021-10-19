@@ -315,6 +315,9 @@ class KaryotypeWidget(QWidget):
                 worker.returned.connect(upd_table_widget)
                 worker.start()
 
+            order_button = QPushButton("Adjust labelling order")
+            order_button.setCheckable(True)
+
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
@@ -341,29 +344,49 @@ class KaryotypeWidget(QWidget):
 
                 self.label_layer.events.selected_label.connect(select_label_updater)
 
-            def foo():
-                print("foo")
+                # -------------------------------------------------------
+                # ordering
+                # -------------------------------------------------------
 
-            self.generate_table_btn.clicked.connect(foo)
-            # self.table.setModel(MyTableModel(loop_data))
+                order = []
 
-            # -------------------------------------------------------
-            # ordering
-            # -------------------------------------------------------
-            order_button = QPushButton("Adjust labelling order")
-            order_button.setCheckable(True)
-            st = order_button.style()
+                def order_listener(layer, event):
 
-            def change_appearance(e):
-                if order_button.isChecked():
-                    order_button.setDown(True)
-                    print(f"order button is {order_button.isChecked()}")
-                else:
-                    order_button.setDown(False)
-                    print(f"order button is {order_button.isChecked()}")
+                    print(f"order listener: {event.position}")
+                    print(f"event type is {event.type}")
 
+                    yield
 
-            order_button.clicked.connect(change_appearance)
+                    while event.type == "mouse_move":
+                        print(self.label_layer.get_value(event.position))
+                        curr_label = self.label_layer.get_value(event.position)
+                        if (curr_label != 0):
+                            self.label_layer.selected_label = self.label_layer.get_value(event.position)
+                            if curr_label not in order:
+                                order.append(curr_label)
+                                self.table.model().dataframe.at[curr_label,1] = len(order)
+
+                            # print(f"counter = {counter}")
+                        yield
+
+                    # while event.type == 'mouse_move':
+                    #     print(f"order listener: {event.position}")
+
+                def change_appearance(e):
+                    if order_button.isChecked():
+                        order_button.setDown(True)
+                        print(f"order button is {order_button.isChecked()}")
+                        # self.label_layer.mouse_move_callbacks.append(order_listener)
+
+                        self.label_layer.mouse_drag_callbacks.append(order_listener)
+                    else:
+                        order_button.setDown(False)
+                        print(f"order button is {order_button.isChecked()}")
+                        # self.label_layer.mouse_move_callbacks.remove(order_listener)
+                        self.label_layer.mouse_drag_callbacks.remove(order_listener)
+                        order.clear()
+
+                order_button.clicked.connect(change_appearance)
 
 
             # -------------------------------------------------------
