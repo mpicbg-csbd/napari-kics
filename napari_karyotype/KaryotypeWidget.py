@@ -169,17 +169,15 @@ class KaryotypeWidget(QWidget):
                 # print(f"coords to fill are {coords_to_fill}")
 
                 indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                coords = [np.where(self.label_layer.data==label) for label in self.table.model().dataframe.index[indices]]
+                coords = [np.where(self.label_layer.data == label) for label in
+                          self.table.model().dataframe.index[indices]]
                 coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
 
                 # print(self.res)
 
                 [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
 
-
-                self.table.selectRow(np.min(indices)-1)
-
-
+                self.table.selectRow(np.min(indices) - 1)
 
             def table_key_press_event_wrapper(e):
                 if e.key() == Qt.Key_Backspace:
@@ -199,7 +197,6 @@ class KaryotypeWidget(QWidget):
             self.summary_frame = pd.DataFrame()
 
             self.label_layer = None
-
 
             self.history_queue_length = 0
             self.history_last_step_length = 0
@@ -270,9 +267,10 @@ class KaryotypeWidget(QWidget):
 
                 for (label, increment) in res_dict.items():
 
-                    if not(label in self.table.model().dataframe.index):
+                    if not (label in self.table.model().dataframe.index):
                         print(f"label {label} is not in the dataframe")
-                        self.table.model().dataframe = self.table.model().dataframe.append(pd.DataFrame([["", label, increment]], index=[label]))
+                        self.table.model().dataframe = self.table.model().dataframe.append(
+                            pd.DataFrame([["", label, increment]], index=[label]))
                         print(f"now it is \n{self.table.model().dataframe}")
 
                     else:
@@ -317,6 +315,8 @@ class KaryotypeWidget(QWidget):
 
             order_button = QPushButton("Adjust labelling order")
             order_button.setCheckable(True)
+
+            annotate_btn = QPushButton("Annotate")
 
             def generate_new_model():
 
@@ -364,7 +364,7 @@ class KaryotypeWidget(QWidget):
                             self.label_layer.selected_label = self.label_layer.get_value(event.position)
                             if curr_label not in order:
                                 order.append(curr_label)
-                                self.table.model().dataframe.at[curr_label,1] = len(order)
+                                self.table.model().dataframe.at[curr_label, 1] = len(order)
 
                             # print(f"counter = {counter}")
                         yield
@@ -388,6 +388,35 @@ class KaryotypeWidget(QWidget):
 
                 order_button.clicked.connect(change_appearance)
 
+                # -------------------------------------------------------
+                # annotation
+                # -------------------------------------------------------
+
+                def bbox2shape(bbox):
+                    return np.array([[bbox[0], bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])
+
+                def annotate(e):
+                    rp = regionprops(self.label_layer.data)
+                    boxes, labels, areas = zip(*[(bbox2shape(r.bbox), r.label, r.area) for r in rp])
+                    print(f"boxes labels and areas have lngths {len(boxes), len(labels), len(areas)}")
+                    print(f"boxes labels and areas are {boxes, labels, areas}")
+
+                    properties = {"label": list(labels), "area":list(areas)}
+
+                    # https: // napari.org / tutorials / applications / annotate_segmentation.html
+                    text_parameters = {
+                        'text': '{area}',
+                        'size': 5,
+                        'color': 'yellow',
+                        'anchor': 'upper_left',
+                        'translation': [-5, 0],
+                        # 'rotation': -90
+                    }
+
+                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=5, edge_color='yellow', properties=
+                                           properties, text=text_parameters)
+
+                annotate_btn.clicked.connect(annotate)
 
             # -------------------------------------------------------
             # adding widgets to the global layout
@@ -395,6 +424,7 @@ class KaryotypeWidget(QWidget):
             self.layout.addWidget(self.generate_table_btn)
 
             self.layout.addWidget(order_button)
+            self.layout.addWidget(annotate_btn)
             self.layout.addWidget(self.table)
             self.generate_table_btn.clicked.connect(generate_new_model)
 
