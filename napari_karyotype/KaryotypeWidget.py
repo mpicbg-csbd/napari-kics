@@ -372,21 +372,21 @@ class KaryotypeWidget(QWidget):
                 #     # while event.type == 'mouse_move':
                 #     #     print(f"order listener: {event.position}")
                 #
-                # def change_appearance(e):
-                #     if order_button.isChecked():
-                #         order_button.setDown(True)
-                #         print(f"order button is {order_button.isChecked()}")
-                #         # self.label_layer.mouse_move_callbacks.append(order_listener)
-                #
-                #         self.label_layer.mouse_drag_callbacks.append(order_listener)
-                #     else:
-                #         order_button.setDown(False)
-                #         print(f"order button is {order_button.isChecked()}")
-                #         # self.label_layer.mouse_move_callbacks.remove(order_listener)
-                #         self.label_layer.mouse_drag_callbacks.remove(order_listener)
-                #         order.clear()
+                def change_appearance(e):
+                    if order_button.isChecked():
+                        order_button.setDown(True)
+                        print(f"order button is {order_button.isChecked()}")
+                        # self.label_layer.mouse_move_callbacks.append(order_listener)
 
-                # order_button.clicked.connect(change_appearance)
+                        self.label_layer.mouse_drag_callbacks.append(order_listener)
+                    else:
+                        order_button.setDown(False)
+                        print(f"order button is {order_button.isChecked()}")
+                        # self.label_layer.mouse_move_callbacks.remove(order_listener)
+                        self.label_layer.mouse_drag_callbacks.remove(order_listener)
+                        order.clear()
+
+                order_button.clicked.connect(change_appearance)
 
                 order = []
 
@@ -401,12 +401,23 @@ class KaryotypeWidget(QWidget):
                         if "Alt" in event.modifiers:
                             print(label_layer.get_value(event.position))
                             curr_label = label_layer.get_value(event.position)
-                            if (curr_label != 0):
+                            if (curr_label != 0 and curr_label is not None):
                                 label_layer.fill(event.position, 0)
-                                order.append(curr_label)
+                                # order.append(curr_label)
                                 print(f"order list is {order}")
 
                         yield
+
+                def parse_recent_step(layer):
+                    recent_step = layer._undo_history[-1][-1]
+                    label = recent_step[1][0]
+
+                    if label in order:
+                        recent_step = layer._redo_history[-1][-1]
+                        label = recent_step[1][0]
+                        order.remove(label)
+                    else:
+                        order.append(label)
 
                 def activate_ordering_mode():
 
@@ -416,7 +427,11 @@ class KaryotypeWidget(QWidget):
 
                     # add a new auxiliary ordering layer
                     ordering_label_layer = self.viewer.add_labels(self.label_layer.data, name="ordering")
+                    ordering_label_layer.editable = False
                     ordering_label_layer.mouse_drag_callbacks.append(order_listener)
+
+                    # attach the event listener
+                    ordering_label_layer.events.set_data.connect(lambda x: parse_recent_step(ordering_label_layer))
 
 
                 def deactivate_ordering_mode():
