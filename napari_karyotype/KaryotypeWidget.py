@@ -386,7 +386,37 @@ class KaryotypeWidget(QWidget):
                         self.label_layer.mouse_drag_callbacks.remove(order_listener)
                         order.clear()
 
-                order_button.clicked.connect(change_appearance)
+                # order_button.clicked.connect(change_appearance)
+
+                def activate_ordering_mode():
+
+                    # make all the existing layers invisible
+                    for layer in self.viewer.layers:
+                        layer.visible = 0
+
+                    # add a new auxiliary ordering layer
+                    self.viewer.add_labels(self.label_layer.data, name="ordering")
+
+                def deactivate_ordering_mode():
+
+                    # delete the auxiliary ordering layer
+                    names = [layer.name for layer in self.viewer.layers]
+                    ind = names.index("ordering")
+                    self.viewer.layers.pop(ind)
+
+                    # make other layers visible
+                    for layer in self.viewer.layers:
+                        layer.visible = 1
+
+                def toggle_ordering_mode(flag):
+                    if flag:
+                        activate_ordering_mode()
+                    else:
+                        deactivate_ordering_mode()
+
+                order_button.clicked.connect(lambda e: toggle_ordering_mode(order_button.isChecked()))
+
+
 
                 # -------------------------------------------------------
                 # annotation
@@ -407,13 +437,15 @@ class KaryotypeWidget(QWidget):
                     text_parameters = {
                         'text': '{area}',
                         'size': 5,
-                        'color': 'yellow',
+                        'color': 'red',
                         'anchor': 'upper_left',
-                        'translation': [-5, 0],
-                        # 'rotation': -90
+                        # 'anchor': 'lower_right',
+                        # 'anchor': 'center',
+                        'translation': [5, -5],
+                        # 'rotation': -45
                     }
 
-                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=5, edge_color='yellow', properties=
+                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red', properties=
                                            properties, text=text_parameters)
 
                 annotate_btn.clicked.connect(annotate)
