@@ -173,18 +173,20 @@ class KaryotypeWidget(QWidget):
                           self.table.model().dataframe.index[indices]]
                 coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
 
+                print(f"[backspace]: removing indices {indices}")
+
                 # print(self.res)
 
                 [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
 
-                self.table.selectRow(np.min(indices) - 1)
+                # self.table.selectRow(np.min(indices) - 1)
 
             def table_key_press_event_wrapper(e):
                 if e.key() == Qt.Key_Backspace:
                     table_key_press_event(None)
                 return QTableWidget.keyPressEvent(self.table, e)
 
-            self.table.keyPressEvent = table_key_press_event_wrapper
+            # self.table.keyPressEvent = table_key_press_event_wrapper
             self.viewer.bind_key("Backspace", table_key_press_event)
 
             def change_handler():
@@ -432,7 +434,7 @@ class KaryotypeWidget(QWidget):
                         recent_step = layer._redo_history[-1][-1]
                         label = recent_step[1][0]
                         order.remove(label)
-                        
+
 
 
                     print(f"recent label: {label}")
