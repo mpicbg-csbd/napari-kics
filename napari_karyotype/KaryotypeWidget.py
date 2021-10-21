@@ -375,6 +375,7 @@ class KaryotypeWidget(QWidget):
                 def change_appearance(e):
                     if order_button.isChecked():
                         order_button.setDown(True)
+                        order.clear()
                         print(f"order button is {order_button.isChecked()}")
                         # self.label_layer.mouse_move_callbacks.append(order_listener)
 
@@ -384,7 +385,7 @@ class KaryotypeWidget(QWidget):
                         print(f"order button is {order_button.isChecked()}")
                         # self.label_layer.mouse_move_callbacks.remove(order_listener)
                         self.label_layer.mouse_drag_callbacks.remove(order_listener)
-                        order.clear()
+
 
                 order_button.clicked.connect(change_appearance)
 
@@ -409,6 +410,7 @@ class KaryotypeWidget(QWidget):
                         yield
 
                 def parse_recent_step(layer):
+                    print(f"parse recent step")
                     recent_step = layer._undo_history[-1][-1]
                     label = recent_step[1][0]
 
@@ -426,13 +428,12 @@ class KaryotypeWidget(QWidget):
                         layer.visible = 0
 
                     # add a new auxiliary ordering layer
-                    ordering_label_layer = self.viewer.add_labels(self.label_layer.data, name="ordering")
+                    ordering_label_layer = self.viewer.add_labels(np.array(self.label_layer.data), name="ordering")
                     ordering_label_layer.editable = False
                     ordering_label_layer.mouse_drag_callbacks.append(order_listener)
 
                     # attach the event listener
                     ordering_label_layer.events.set_data.connect(lambda x: parse_recent_step(ordering_label_layer))
-
 
                 def deactivate_ordering_mode():
 
@@ -445,6 +446,21 @@ class KaryotypeWidget(QWidget):
                     for layer in self.viewer.layers:
                         layer.visible = 1
 
+                    print(f"order is {order}")
+
+                    if len(order) > 0:
+
+                        print("relabelling")
+                        for ind, label in enumerate(order):
+                            self.table.model().dataframe.at[label, 1] = ind+1
+
+                        unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(order) - {0}
+
+                        for label in unprocessed_labels:
+                            self.table.model().dataframe.at[label, 1] = -1
+
+                    self.table.update()
+
                 def toggle_ordering_mode(flag):
                     if flag:
                         activate_ordering_mode()
@@ -452,8 +468,6 @@ class KaryotypeWidget(QWidget):
                         deactivate_ordering_mode()
 
                 order_button.clicked.connect(lambda e: toggle_ordering_mode(order_button.isChecked()))
-
-
 
                 # -------------------------------------------------------
                 # annotation
@@ -468,7 +482,7 @@ class KaryotypeWidget(QWidget):
                     print(f"boxes labels and areas have lngths {len(boxes), len(labels), len(areas)}")
                     print(f"boxes labels and areas are {boxes, labels, areas}")
 
-                    properties = {"label": list(labels), "area":list(areas)}
+                    properties = {"label": list(labels), "area": list(areas)}
 
                     # https: // napari.org / tutorials / applications / annotate_segmentation.html
                     text_parameters = {
@@ -482,7 +496,8 @@ class KaryotypeWidget(QWidget):
                         # 'rotation': -45
                     }
 
-                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red', properties=
+                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red',
+                                           properties=
                                            properties, text=text_parameters)
 
                 annotate_btn.clicked.connect(annotate)
