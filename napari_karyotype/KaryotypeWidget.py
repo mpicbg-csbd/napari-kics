@@ -410,16 +410,33 @@ class KaryotypeWidget(QWidget):
                         yield
 
                 def parse_recent_step(layer):
-                    print(f"parse recent step")
-                    recent_step = layer._undo_history[-1][-1]
-                    label = recent_step[1][0]
 
-                    if label in order:
+                    print(f"parse recent step")
+
+                    print(f"undo history\n {layer._undo_history}")
+                    print(f"redo history\n {layer._redo_history}")
+
+                    if len(layer._undo_history) != 0:
+                        recent_step = layer._undo_history[-1][-1]
+                        label = recent_step[1][0]
+
+                        if label not in order:
+                            order.append(label)
+                        else:
+                            recent_step = layer._redo_history[-1][-1]
+                            label = recent_step[1][0]
+                            order.remove(label)
+
+
+                    else:
                         recent_step = layer._redo_history[-1][-1]
                         label = recent_step[1][0]
                         order.remove(label)
-                    else:
-                        order.append(label)
+                        
+
+
+                    print(f"recent label: {label}")
+                    print(f"order: {order}")
 
                 def activate_ordering_mode():
 
