@@ -71,6 +71,8 @@ class KaryotypeWidget(QWidget):
         res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
         res["labelled"] = self.viewer.layers[names.index("labelled")].data
 
+        res["labelled_color"] = self.viewer.layers[names.index("labelled")].get_color(list(res["labelled"]))
+
         return res
 
     def generate_gui_from_config(self,
