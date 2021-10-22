@@ -418,7 +418,6 @@ class KaryotypeWidget(QWidget):
                         # self.label_layer.mouse_move_callbacks.remove(order_listener)
                         # self.label_layer.mouse_drag_callbacks.remove(order_listener)
 
-
                 order_button.clicked.connect(change_appearance)
 
                 order = []
@@ -465,8 +464,6 @@ class KaryotypeWidget(QWidget):
                         label = recent_step[1][0]
                         order.remove(label)
 
-
-
                     print(f"recent label: {label}")
                     print(f"order: {order}")
 
@@ -503,7 +500,7 @@ class KaryotypeWidget(QWidget):
 
                         print("relabelling")
                         for ind, label in enumerate(order):
-                            self.table.model().dataframe.at[label, 1] = ind+1
+                            self.table.model().dataframe.at[label, 1] = ind + 1
 
                         unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(order) - {0}
 
@@ -540,11 +537,11 @@ class KaryotypeWidget(QWidget):
                         'text': '{area}',
                         'size': 6,
                         'color': 'red',
-                        # 'anchor': 'upper_left',
-                        'anchor': 'lower_left',
+                        'anchor': 'upper_left',
+                        # 'anchor': 'lower_left',
                         # 'anchor': 'center',
-                        'translation': [75, 0],
-                        'rotation': -90
+                        # 'translation': [75, 0],
+                        # 'rotation': -90
                     }
 
                     self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red',
@@ -558,20 +555,21 @@ class KaryotypeWidget(QWidget):
                 # -------------------------------------------------------
 
                 def save_output(path):
+
+                    # images
                     from skimage import io
                     imgs_dict = self.get_imgs_dict()
                     [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
 
-
+                    # dataframe
                     dataframe = pd.DataFrame()
                     dataframe["tags"] = list(self.table.model().dataframe[1])
                     dataframe["labels"] = list(self.table.model().dataframe.index)
                     dataframe["area"] = list(self.table.model().dataframe[2])
-
-                    # dataframe = dataframe.rename_axis("labels")
-                    print(dataframe)
-
                     dataframe.to_csv(f"{path}/data.csv", index=False)
+
+                    # screenshot
+                    self.viewer.screenshot(f"{path}/screenshot.png")
 
                 save_btn.clicked.connect(lambda e: save_output(save_path_line_edit.text()))
 
@@ -585,7 +583,6 @@ class KaryotypeWidget(QWidget):
             self.layout.addWidget(save_path_line_edit)
             self.layout.addWidget(save_btn)
             self.layout.addWidget(self.table)
-
 
             self.generate_table_btn.clicked.connect(generate_new_model)
 
