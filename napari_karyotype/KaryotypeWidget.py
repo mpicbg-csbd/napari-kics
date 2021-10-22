@@ -205,11 +205,20 @@ class KaryotypeWidget(QWidget):
 
             def process_history_step():
 
-                # print(f"undo history is {self.label_layer._undo_history}")
+                print(f"[process_history_step]: entry")
+                print(f"[process_history_step]: undo history is {self.label_layer._undo_history}")
+                print(f"[process_history_step]: redo history is {self.label_layer._redo_history}")
 
                 print(f"")
 
-                if len(self.label_layer._undo_history) > self.history_queue_length:
+                # apparently, undo and redo history get erased upon the layer visibility toggle
+                # first clause is to account for that, should refactor the entire "if" later on
+                if (len(self.label_layer._undo_history) == 0 and len(self.label_layer._redo_history) == 0):
+                    self.history_queue_length = 0
+                    self.history_last_step_length = 0
+                    return {}
+
+                elif len(self.label_layer._undo_history) > self.history_queue_length:
                     factor = +1
                     step = self.label_layer._undo_history[-1]
                     self.history_queue_length = len(self.label_layer._undo_history)
@@ -320,6 +329,12 @@ class KaryotypeWidget(QWidget):
 
             annotate_btn = QPushButton("Annotate")
 
+            from napari_karyotype.utils import ClickableLineEdit
+            save_path_line_edit = ClickableLineEdit(f"{Path(__file__).absolute().parent}/resources/example_output")
+
+            save_btn = QPushButton("Save")
+            save_btn.clicked.connect(lambda x: print(f"path is {save_path_line_edit.text()}"))
+
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
@@ -377,16 +392,16 @@ class KaryotypeWidget(QWidget):
                 def change_appearance(e):
                     if order_button.isChecked():
                         order_button.setDown(True)
-                        order.clear()
+
                         print(f"order button is {order_button.isChecked()}")
                         # self.label_layer.mouse_move_callbacks.append(order_listener)
 
-                        self.label_layer.mouse_drag_callbacks.append(order_listener)
+                        # self.label_layer.mouse_drag_callbacks.append(order_listener)
                     else:
                         order_button.setDown(False)
                         print(f"order button is {order_button.isChecked()}")
                         # self.label_layer.mouse_move_callbacks.remove(order_listener)
-                        self.label_layer.mouse_drag_callbacks.remove(order_listener)
+                        # self.label_layer.mouse_drag_callbacks.remove(order_listener)
 
 
                 order_button.clicked.connect(change_appearance)
@@ -442,12 +457,14 @@ class KaryotypeWidget(QWidget):
 
                 def activate_ordering_mode():
 
+                    order.clear()
+
                     # make all the existing layers invisible
                     for layer in self.viewer.layers:
                         layer.visible = 0
 
                     # add a new auxiliary ordering layer
-                    ordering_label_layer = self.viewer.add_labels(np.array(self.label_layer.data), name="ordering")
+                    ordering_label_layer = self.viewer.add_labels(deepcopy(self.label_layer.data), name="ordering")
                     ordering_label_layer.editable = False
                     ordering_label_layer.mouse_drag_callbacks.append(order_listener)
 
@@ -476,7 +493,7 @@ class KaryotypeWidget(QWidget):
                         unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(order) - {0}
 
                         for label in unprocessed_labels:
-                            self.table.model().dataframe.at[label, 1] = -1
+                            self.table.model().dataframe.at[label, 1] = 9999
 
                     self.table.update()
 
@@ -506,13 +523,13 @@ class KaryotypeWidget(QWidget):
                     # https: // napari.org / tutorials / applications / annotate_segmentation.html
                     text_parameters = {
                         'text': '{area}',
-                        'size': 5,
+                        'size': 6,
                         'color': 'red',
-                        'anchor': 'upper_left',
-                        # 'anchor': 'lower_right',
+                        # 'anchor': 'upper_left',
+                        'anchor': 'lower_left',
                         # 'anchor': 'center',
-                        'translation': [5, -5],
-                        # 'rotation': -45
+                        'translation': [75, 0],
+                        'rotation': -90
                     }
 
                     self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red',
@@ -521,6 +538,15 @@ class KaryotypeWidget(QWidget):
 
                 annotate_btn.clicked.connect(annotate)
 
+                # -------------------------------------------------------
+                # saving
+                # -------------------------------------------------------
+
+                def save_output(path):
+                    from skimage import io
+
+                    # io.imsave(f"{path}/input.png", )
+
             # -------------------------------------------------------
             # adding widgets to the global layout
             # -------------------------------------------------------
@@ -528,7 +554,11 @@ class KaryotypeWidget(QWidget):
 
             self.layout.addWidget(order_button)
             self.layout.addWidget(annotate_btn)
+            self.layout.addWidget(save_path_line_edit)
+            self.layout.addWidget(save_btn)
             self.layout.addWidget(self.table)
+
+
             self.generate_table_btn.clicked.connect(generate_new_model)
 
 
