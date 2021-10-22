@@ -63,6 +63,16 @@ class KaryotypeWidget(QWidget):
 
         self.generate_gui_from_config()
 
+    def get_imgs_dict(self):
+
+        res = {}
+        names = [layer.name for layer in self.viewer.layers]
+        res[self.input_img_name] = self.viewer.layers[names.index(self.input_img_name)].data
+        res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
+        res["labelled"] = self.viewer.layers[names.index("labelled")].data
+
+        return res
+
     def generate_gui_from_config(self,
                                  config_file_path=f"{Path(__file__).absolute().parent}/resources/config/config.json"):
 
@@ -82,6 +92,7 @@ class KaryotypeWidget(QWidget):
                     img = rgb2gray(input_image)
                 else:
                     img = input_image
+
                 return ((1 - img) > threshold_value).astype(int)
 
             threshold_config = {
@@ -106,6 +117,8 @@ class KaryotypeWidget(QWidget):
 
             def threshold_wrapper(threshold_value=0.5):
                 input_image = self.viewer.layers.selection.active.data
+                self.input_img_name = self.viewer.layers.selection.active.name
+                print(f"[threshold_wrapper]: input img name is {self.input_img_name}")
                 thresholded = threshold(input_image, threshold_value)
                 threshold_updater("thresholded", thresholded, self.viewer)
 
@@ -544,8 +557,10 @@ class KaryotypeWidget(QWidget):
 
                 def save_output(path):
                     from skimage import io
+                    imgs_dict = self.get_imgs_dict()
+                    [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
 
-                    # io.imsave(f"{path}/input.png", )
+                save_btn.clicked.connect(lambda e: save_output(save_path_line_edit.text()))
 
             # -------------------------------------------------------
             # adding widgets to the global layout
