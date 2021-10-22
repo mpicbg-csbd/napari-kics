@@ -148,14 +148,87 @@ class KaryotypeWidget(QWidget):
                 labelled_img = label(input_image).astype(int)
                 labelled_updater("labelled", labelled_img, self.viewer)
 
-            widgets.append(magicgui.magicgui(threshold_wrapper, **threshold_config).native)
-            widgets.append(magicgui.magicgui(label_wrapper, **label_config).native)
+            # widgets.append(magicgui.magicgui(threshold_wrapper, **threshold_config).native)
+
+            # ----------------------------------------------------------------------
+            # 1. Blur step
+            # ----------------------------------------------------------------------
+            # blur step description label
+            blur_descr_label = QLabel("1. Select the appropriate sigma value to denoise the image with a Gaussian blur:")
+
+            # blur slider label
+            blur_sl_label = QLabel("sigma:")
+
+            # sigma slider
+            sigma_slider = QSlider(Qt.Horizontal)
+            sigma_slider.setMinimum(0)
+            sigma_slider.setMaximum(100)
+            sigma_slider.setSingleStep(1)
+            sigma_slider.setTickInterval(20)
+            sigma_slider.setTickPosition(QSlider.TicksBelow)
+            sigma_slider.setValue(50)
+            sigma_slider.setFixedWidth(400)
+
+            # sigma slider value
+            sigma_sl_val = QLabel(f"{sigma_slider.value() / 20:0.2f}")
+            sigma_slider.valueChanged.connect(lambda e: sigma_sl_val.setText(f"{threshold_slider.value() / 20:0.2f}"))
+
+            # threshold box
+            blur_box_ = QHBoxLayout()
+            blur_box_.addWidget(blur_sl_label)
+            blur_box_.addWidget(sigma_slider)
+            blur_box_.addWidget(sigma_sl_val)
+            blur_box_.setSpacing(0)
+            blur_box_.setContentsMargins(0,0,0,0)
+
+            blur_box = QVBoxLayout()
+            blur_box.addWidget(blur_descr_label)
+            blur_box.addLayout(blur_box_)
+            blur_box.setSpacing(5)
+
+
+            # ----------------------------------------------------------------------
+            # 2. Thresholding step
+            # ----------------------------------------------------------------------
+
+            # thresholding step description label
+            th_descr_label = QLabel("2. Select the appropriate threshold value to segment the image.")
+
+            # threshold slider label
+            th_sl_label = QLabel("th_val:")
+
+            # threshold slider
+            threshold_slider = QSlider(Qt.Horizontal)
+            threshold_slider.setMinimum(0)
+            threshold_slider.setMaximum(100)
+            threshold_slider.setSingleStep(1)
+            threshold_slider.setTickInterval(20)
+            threshold_slider.setTickPosition(QSlider.TicksBelow)
+            threshold_slider.setValue(50)
+            threshold_slider.setFixedWidth(400)
+
+            # threshold slider value
+            th_sl_val = QLabel(f"{threshold_slider.value()/100:0.2f}")
+            threshold_slider.valueChanged.connect(lambda e: th_sl_val.setText(f"{threshold_slider.value()/100:0.2f}"))
+
+            # threshold box
+            threshold_box = QHBoxLayout()
+            threshold_box.addWidget(th_sl_label)
+            threshold_box.addWidget(threshold_slider)
+            threshold_box.addWidget(th_sl_val)
+
 
             self.curr = 0
 
             self.layout.addLayout(self.head_layout)
             self.layout.addSpacing(10)
-            [self.layout.addWidget(widget) for widget in widgets]
+            # [self.layout.addWidget(widget) for widget in widgets]
+
+            # self.layout.addWidget(blur_descr_label)
+            self.layout.addLayout(blur_box)
+
+            self.layout.addWidget(th_descr_label)
+            self.layout.addLayout(threshold_box)
 
             self.layout.setAlignment(Qt.AlignTop)
 
