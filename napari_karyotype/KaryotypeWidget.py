@@ -562,6 +562,17 @@ class KaryotypeWidget(QWidget):
                     imgs_dict = self.get_imgs_dict()
                     [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
 
+
+                    dataframe = pd.DataFrame()
+                    dataframe["tags"] = list(self.table.model().dataframe[1])
+                    dataframe["labels"] = list(self.table.model().dataframe.index)
+                    dataframe["area"] = list(self.table.model().dataframe[2])
+
+                    # dataframe = dataframe.rename_axis("labels")
+                    print(dataframe)
+
+                    dataframe.to_csv(f"{path}/data.csv", index=False)
+
                 save_btn.clicked.connect(lambda e: save_output(save_path_line_edit.text()))
 
             # -------------------------------------------------------
