@@ -217,7 +217,7 @@ class KaryotypeWidget(QWidget):
 
             # wrapper with napari updates
             def threshold_wrapper(threshold_value=0.5):
-                input_image = layers2dict(self.viewer)["blurred"].data
+                input_image = get_img("blurred", self.viewer).data
 
                 print(f"[threshold_wrapper]: input img name is {self.input_img_name}")
                 thresholded = threshold(input_image, threshold_value)
@@ -226,7 +226,6 @@ class KaryotypeWidget(QWidget):
                     self.viewer.layers["thresholded"].data = thresholded
                 except KeyError:
                     self.viewer.add_image(thresholded, name="thresholded", opacity=0.7, colormap="red")
-                self.viewer.layers.select_previous()
 
             # thresholding step description label
             th_descr_label = QLabel("2. Select the appropriate threshold value to segment the image.")
@@ -279,7 +278,6 @@ class KaryotypeWidget(QWidget):
                     self.viewer.layers["labelled"].data = labelled
                 except KeyError:
                     self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
-                self.viewer.layers.select_previous()
 
             labeling_descr_label = QLabel(
                 "3. Apply label function to assign a unique integer id to each connected component:")
@@ -290,8 +288,6 @@ class KaryotypeWidget(QWidget):
             label_box.addWidget(labeling_descr_label)
             label_box.addWidget(label_btn)
             label_box.setSpacing(5)
-
-            self.curr = 0
 
             self.layout.addLayout(self.head_layout)
             self.layout.addLayout(blur_box)
@@ -310,20 +306,7 @@ class KaryotypeWidget(QWidget):
             # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
             self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
 
-            # self.table.clicked.connect(lambda e: print(f"selection changed to {e.row()}"))
-            # self.table.clicked.connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
-            # self.table.dragMoveEvent().connect(lambda e: print(f"selection indices are {self.table.selectedIndexes()}"))
-
-            def table_key_press_event(viewer):
-
-                # indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                # print(f"selection indices are {indices}")
-                #
-                # labels = [self.table.model().dataframe.iloc[i][1] for i in indices]
-                # print(f"the corresponding labels are {labels}")
-                #
-                # coords_to_fill = [entry[2] for entry in self.res if entry[0] in labels]
-                # print(f"coords to fill are {coords_to_fill}")
+            def delete_label(viewer):
 
                 indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
                 coords = [np.where(self.label_layer.data == label) for label in
@@ -332,104 +315,24 @@ class KaryotypeWidget(QWidget):
 
                 print(f"[backspace]: removing indices {indices}")
 
-                # print(self.res)
-
                 [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
 
-                # self.table.selectRow(np.min(indices) - 1)
+            self.viewer.bind_key("Backspace", delete_label)
 
-            def table_key_press_event_wrapper(e):
-                if e.key() == Qt.Key_Backspace:
-                    table_key_press_event(None)
-                return QTableWidget.keyPressEvent(self.table, e)
-
-            # self.table.keyPressEvent = table_key_press_event_wrapper
-            self.viewer.bind_key("Backspace", table_key_press_event)
-
-            def change_handler():
-                pass
-
-            self.table.clicked.connect(change_handler)
 
             self.generate_table_btn = QtWidgets.QPushButton("Generate Table")
-
-            self.summary_frame = pd.DataFrame()
 
             self.label_layer = None
 
             self.history_queue_length = 0
             self.history_last_step_length = 0
 
-            def process_history_step():
-
-                print(f"[process_history_step]: entry")
-                print(f"[process_history_step]: undo history is {self.label_layer._undo_history}")
-                print(f"[process_history_step]: redo history is {self.label_layer._redo_history}")
-
-                print(f"")
-
-                # apparently, undo and redo history get erased upon the layer visibility toggle
-                # first clause is to account for that, should refactor the entire "if" later on
-                if (len(self.label_layer._undo_history) == 0 and len(self.label_layer._redo_history) == 0):
-                    self.history_queue_length = 0
-                    self.history_last_step_length = 0
-                    return {}
-
-                elif len(self.label_layer._undo_history) > self.history_queue_length:
-                    factor = +1
-                    step = self.label_layer._undo_history[-1]
-                    self.history_queue_length = len(self.label_layer._undo_history)
-                    self.history_last_step_length = len(step)
-                    print(f"self history last step length is {self.history_last_step_length}")
-
-                elif len(self.label_layer._undo_history) < self.history_queue_length:
-                    factor = -1
-                    step = self.label_layer._redo_history[-1]
-                    self.history_queue_length = len(self.label_layer._undo_history)
-                    self.history_last_step_length = 0
-
-                elif len(self.label_layer._undo_history) != 0 and len(
-                        self.label_layer._undo_history[-1]) > self.history_last_step_length:
-                    factor = +1
-                    step_ = self.label_layer._undo_history[-1]
-                    new_length = len(step_)
-                    step = step_[self.history_last_step_length:new_length]
-                    self.history_queue_length = len(self.label_layer._undo_history)
-                    self.history_last_step_length = new_length
-                    print(f"self history last step length is {self.history_last_step_length}")
-
-
-                else:
-                    return {}
-
-                # print(f"step is {step}")
-
-                res_dict = {}
-
-                for sub_step in step:
-
-                    labels_removed, labels_remove_counts = np.unique(sub_step[1], return_counts=True)
-                    label_added = sub_step[2]
-
-                    for ind, label in enumerate(labels_removed):
-
-                        if label in res_dict:
-                            res_dict[label] += -factor * labels_remove_counts[ind]
-                        else:
-                            res_dict[label] = -factor * labels_remove_counts[ind]
-
-                    if label_added in res_dict:
-                        res_dict[label_added] += factor * np.sum(labels_remove_counts)
-                    else:
-                        res_dict[label_added] = factor * np.sum(labels_remove_counts)
-
-                    print(f"dict at the current substep: {res_dict}")
-
-                return res_dict
+            from napari_karyotype.utils import LabelManager
+            label_manager = LabelManager(get_img("labelled", self.viewer))
 
             def upd_table_new():
 
-                res_dict = process_history_step()
+                res_dict = label_manager.process_history_step()
 
                 print(f"res_dict is {res_dict}")
 
