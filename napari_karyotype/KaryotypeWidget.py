@@ -18,6 +18,7 @@ from qtpy.QtGui import QColor
 
 from napari.qt import thread_worker
 from copy import deepcopy
+from napari_karyotype.utils import get_img
 
 
 # ------------------------------------------------------------------------
@@ -164,7 +165,6 @@ class KaryotypeWidget(QWidget):
                     self.viewer.add_image(blurred, name="blurred")
                 self.viewer.layers.select_previous()
 
-
             # blur step description label
             blur_descr_label = QLabel(
                 "1. Select the appropriate sigma value to denoise the image with a Gaussian blur:")
@@ -250,24 +250,56 @@ class KaryotypeWidget(QWidget):
             threshold_slider.valueChanged.connect(lambda e: threshold_wrapper(threshold_slider.value() / 100))
 
             # threshold box
-            threshold_box = QHBoxLayout()
-            threshold_box.addWidget(th_sl_label)
-            threshold_box.addWidget(threshold_slider)
-            threshold_box.addWidget(th_sl_val)
+            threshold_box_ = QHBoxLayout()
+            threshold_box_.addWidget(th_sl_label)
+            threshold_box_.addWidget(threshold_slider)
+            threshold_box_.addWidget(th_sl_val)
+            threshold_box = QVBoxLayout()
+            threshold_box.addWidget(th_descr_label)
+            threshold_box.addLayout(threshold_box_)
+            threshold_box.setSpacing(5)
+
+            # ----------------------------------------------------------------------
+            # 3. Labeling step
+            # ----------------------------------------------------------------------
+
+            # the actual function
+
+            def label(img):
+                from scipy.ndimage import label
+                return label(img)[0]
+
+            # wrapper with napari updates
+            def label_wrapper():
+
+                input_image = get_img("thresholded", self.viewer).data
+                labelled = label(input_image)
+
+                try:
+                    self.viewer.layers["labelled"].data = labelled
+                except KeyError:
+                    self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
+                self.viewer.layers.select_previous()
+
+            labeling_descr_label = QLabel(
+                "3. Apply label function to assign a unique integer id to each connected component:")
+            label_btn = QPushButton("Label")
+            label_btn.clicked.connect(lambda e: label_wrapper())
+
+            label_box = QVBoxLayout()
+            label_box.addWidget(labeling_descr_label)
+            label_box.addWidget(label_btn)
+            label_box.setSpacing(5)
 
             self.curr = 0
 
             self.layout.addLayout(self.head_layout)
-            self.layout.addSpacing(10)
-            # [self.layout.addWidget(widget) for widget in widgets]
-
-            # self.layout.addWidget(blur_descr_label)
             self.layout.addLayout(blur_box)
-
-            self.layout.addWidget(th_descr_label)
             self.layout.addLayout(threshold_box)
+            self.layout.addLayout(label_box)
 
             self.layout.setAlignment(Qt.AlignTop)
+            self.layout.setSpacing(20)
 
             # ----------------------------------------------------------------------
             # table widget

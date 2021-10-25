@@ -5,6 +5,17 @@ import numpy as np
 DEBUG = True
 
 
+def get_img(name, viewer):
+    names = [layer.name for layer in viewer.layers]
+
+    if name in names:
+        ind = names.index(name)
+        return viewer.layers[ind]
+    else:
+        raise Exception(
+            f"[get_img]: Failed to retrieve the image with the name {name}. Make sure the requested data is properly imported/generated and repeat the operation.")
+
+
 # ------------------------------------------------------------------------
 # updating napari layers with new data
 # ------------------------------------------------------------------------
@@ -23,6 +34,7 @@ def update_layer_from_dict(viewer, di):
 def get_updater(viewer):
     def updater(outputs_dict):
         update_layer_from_dict(viewer, outputs_dict)
+
     return updater
 
 
@@ -32,7 +44,6 @@ def get_updater(viewer):
 def make_async(func, state, viewer, output_names, completion_flag=None):
     @wraps(func)
     def async_wrapper(*args, **kwargs):
-
         # @thread_worker
         # def worker():
         #     outputs = func(*args, **kwargs)
@@ -176,6 +187,8 @@ def arr_in_list(arr, list):
 # based on https://stackoverflow.com/questions/46671067/clear-qlineedit-on-click-event
 
 from qtpy.QtWidgets import QLineEdit, QFileDialog
+
+
 class ClickableLineEdit(QLineEdit):
 
     def __init__(self, default_text="./"):
