@@ -44,7 +44,7 @@ class SavingManager(QVBoxLayout):
     def get_imgs_dict(self):
         res = {}
         names = [layer.name for layer in self.viewer.layers]
-        res[self.input_img_name] = self.viewer.layers[names.index(self.input_img_name)].data
+        res["blurred"] = self.viewer.layers[names.index("blurred")].data
         res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
         res["labelled"] = self.viewer.layers[names.index("labelled")].data
 

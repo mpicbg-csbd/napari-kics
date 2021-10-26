@@ -89,7 +89,7 @@ class LabelWidget(QVBoxLayout):
 
 
 
-    def delete_selected_labels(self):
+    def delete_selected_labels(self, e):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
         coords = [np.where(self.label_layer.data == label) for label in
                   self.table.model().dataframe.index[indices]]
