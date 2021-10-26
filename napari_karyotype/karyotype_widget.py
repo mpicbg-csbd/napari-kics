@@ -3,7 +3,7 @@ from qtpy.QtGui import QFont
 from qtpy.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt
 from qtpy import QtWidgets
-from qtpy.QtGui import QBrush
+
 
 import napari, json, os
 from napari_karyotype.utils import create_widget
@@ -19,7 +19,7 @@ from qtpy.QtGui import QColor
 from napari.qt import thread_worker
 from copy import deepcopy
 from napari_karyotype.utils import get_img
-
+from napari_karyotype.table_model import PandasTableModel
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -319,7 +319,6 @@ class KaryotypeWidget(QWidget):
 
             self.viewer.bind_key("Backspace", delete_label)
 
-
             self.generate_table_btn = QtWidgets.QPushButton("Generate Table")
 
             self.label_layer = None
@@ -328,11 +327,11 @@ class KaryotypeWidget(QWidget):
             self.history_last_step_length = 0
 
             from napari_karyotype.utils import LabelManager
-            label_manager = LabelManager(get_img("labelled", self.viewer))
+            self.label_manager = None
 
             def upd_table_new():
 
-                res_dict = label_manager.process_history_step()
+                res_dict = self.label_manager.process_history_step()
 
                 print(f"res_dict is {res_dict}")
 
@@ -353,36 +352,19 @@ class KaryotypeWidget(QWidget):
                     self.table.update()
                     self.table.sortByColumn(2, Qt.DescendingOrder)
 
-            from skimage.measure import regionprops
-            @thread_worker
-            def upd_table():
-                # labels, counts = np.unique(self.label_layer.data, return_counts=True)
-                rp = regionprops(self.label_layer.data + 1)
-                # self.labels = [r.label-1 for r in rp]
-                # counts = [r.area for r in rp]
-                # self.coords = [r.coords for r in rp]
+            def initialize_table(label_layer):
 
-                self.res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
-                self.res = np.array(sorted(self.res, key=lambda x: x[0]))
-                # print(res)
+                from skimage.measure import regionprops
+                rp = regionprops(label_layer.data + 1)
 
-                # l = [("", labels[ind], self.label_layer.get_color(labels[ind])) for ind in range(len(labels))]
-                l = [("", self.res[ind, 0], self.res[ind, 1]) for ind in range(len(self.res))]
-                colors = [self.label_layer.get_color(label) for label in self.res[:, 0]]
-                self.summary_frame = pd.DataFrame(l)
-                # self.table.setModel(MyTableModel(self.summary_frame, colors))
+                res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
+                res = np.array(sorted(res, key=lambda x: x[0]))
+                l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
 
-                return self.summary_frame, colors
-
-            def upd_table_widget(args):
-                # self.table.setModel(MyTableModel(args[0], args[1]))
-                self.table.setModel(MyTableModel(args[0], self.label_layer.get_color))
+                frame = pd.DataFrame(l)
+                self.table.setModel(PandasTableModel(frame, label_layer.get_color))
                 self.table.sortByColumn(2, Qt.DescendingOrder)
 
-            def launch_upd_worker():
-                worker = upd_table()
-                worker.returned.connect(upd_table_widget)
-                worker.start()
 
             order_button = QPushButton("Adjust labelling order")
             order_button.setCheckable(True)
@@ -398,72 +380,24 @@ class KaryotypeWidget(QWidget):
             def generate_new_model():
 
                 self.label_layer = self.viewer.layers.selection.active
-                launch_upd_worker()
-                # self.label_layer.events.set_data.connect(lambda x: launch_upd_worker())
+                initialize_table(get_img("labelled", self.viewer))
+                self.label_manager = LabelManager(get_img("labelled", self.viewer))
                 self.label_layer.events.set_data.connect(lambda x: upd_table_new())
 
-                def synchronize_selection(e):
+                def sync_selection_table2viewer(e):
                     indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                    # self.label_layer.selected_label = self.table.model().dataframe[1].iloc[indices[0]]
                     self.label_layer.selected_label = self.table.model().dataframe.index[indices[0]]
 
-                self.table.clicked.connect(synchronize_selection)
+                self.table.clicked.connect(sync_selection_table2viewer)
 
-                def select_label_updater(e):
+                def sync_selection_viewer2table(e):
                     sl = self.label_layer.selected_label
-                    print(f"selecting label {sl}")
-                    # ind = self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl].index[0]
-                    # ind = list(self.table.model().dataframe[1]).index(sl)
                     ind = self.table.model().dataframe.index.get_loc(sl)
-                    # print(self.table.model().dataframe.loc[self.table.model().dataframe[1] == sl])
-                    print(f"selecting row {ind}")
                     self.table.selectRow(ind)
 
-                self.label_layer.events.selected_label.connect(select_label_updater)
+                self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
 
-                # -------------------------------------------------------
-                # ordering
-                # -------------------------------------------------------
-
-                # order = []
-                #
-                # def order_listener(layer, event):
-                #
-                #     print(f"order listener: {event.position}")
-                #     print(f"event type is {event.type}")
-                #
-                #     yield
-                #
-                #     while event.type == "mouse_move":
-                #         print(self.label_layer.get_value(event.position))
-                #         curr_label = self.label_layer.get_value(event.position)
-                #         if (curr_label != 0):
-                #             self.label_layer.selected_label = self.label_layer.get_value(event.position)
-                #             if curr_label not in order:
-                #                 order.append(curr_label)
-                #                 self.table.model().dataframe.at[curr_label, 1] = len(order)
-                #
-                #             # print(f"counter = {counter}")
-                #         yield
-                #
-                #     # while event.type == 'mouse_move':
-                #     #     print(f"order listener: {event.position}")
-                #
-                def change_appearance(e):
-                    if order_button.isChecked():
-                        order_button.setDown(True)
-
-                        print(f"order button is {order_button.isChecked()}")
-                        # self.label_layer.mouse_move_callbacks.append(order_listener)
-
-                        # self.label_layer.mouse_drag_callbacks.append(order_listener)
-                    else:
-                        order_button.setDown(False)
-                        print(f"order button is {order_button.isChecked()}")
-                        # self.label_layer.mouse_move_callbacks.remove(order_listener)
-                        # self.label_layer.mouse_drag_callbacks.remove(order_listener)
-
-                order_button.clicked.connect(change_appearance)
+                order_button.clicked.connect(lambda e: order_button.setDown(order_button.isChecked()))
 
                 order = []
 
@@ -570,6 +504,8 @@ class KaryotypeWidget(QWidget):
                     return np.array([[bbox[0], bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])
 
                 def annotate(e):
+
+                    from skimage.measure import regionprops
                     rp = regionprops(self.label_layer.data)
                     boxes, labels, areas = zip(*[(bbox2shape(r.bbox), r.label, r.area) for r in rp])
                     print(f"boxes labels and areas have lngths {len(boxes), len(labels), len(areas)}")
@@ -632,87 +568,3 @@ class KaryotypeWidget(QWidget):
             self.generate_table_btn.clicked.connect(generate_new_model)
 
 
-# https://www.pythonguis.com/faq/editing-pyqt-tableview/
-class MyTableModel(QtCore.QAbstractTableModel):
-
-    # def __init__(self, pandas_dataframe, colors):
-    def __init__(self, pandas_dataframe, get_color):
-        super().__init__()
-
-        self.dataframe = pandas_dataframe
-        self.get_color = get_color
-        # self.colors = colors
-        # self.colors_ordered = deepcopy(self.colors)
-        # self.dataframe.insert(3, "colors", self.colors)
-
-    def rowCount(self, parent=None, *args, **kwargs):
-        return self.dataframe.shape[0]
-
-    def columnCount(self, parent=None, *args, **kwargs):
-        return self.dataframe.shape[1]
-
-    def data(self, QModelIndex, role=None):
-
-        if role == Qt.BackgroundRole and QModelIndex.column() == 0:
-
-            # color = self.colors_ordered[QModelIndex.row()]
-            color = self.get_color(self.dataframe.index[QModelIndex.row()])
-            if color is None:
-                color = np.array([0.0, 0.0, 0.0, 0.0])
-            r, g, b, a = (255 * color).astype(int)
-            # print(f"Color is {r,g,b,a}")
-            return QBrush(QColor(r, g, b, alpha=a))
-
-        if role != QtCore.Qt.DisplayRole:
-            return QtCore.QVariant()
-
-        return str(self.dataframe.iloc[QModelIndex.row()][QModelIndex.column()])
-
-    def headerData(self, p_int, Qt_Orientation, role=None):
-
-        if role == QtCore.Qt.DisplayRole:
-            if Qt_Orientation == QtCore.Qt.Horizontal:
-                return self.dataframe.columns[p_int]
-            else:
-                return p_int
-
-    def setData(self, index, value, role):
-        if role == Qt.EditRole:
-            self.dataframe.iloc[index.row(), index.column()] = value
-            return True
-        return False
-
-    def flags(self, index):
-        # label = Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsEditable
-        label = Qt.ItemIsEnabled | Qt.ItemIsEditable
-        rest = Qt.ItemIsSelectable | Qt.ItemIsEnabled
-
-        if index.column() == 0:
-            return Qt.ItemIsEnabled
-        elif index.column() == 1:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
-        else:
-            return Qt.ItemIsEnabled | Qt.ItemIsSelectable
-
-    # https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
-    def sort(self, column, order):
-
-        self.layoutAboutToBeChanged.emit()
-        #
-        # self.merged_frame = pd.concat([self.dataframe, pd.DataFrame({"colors": self.colors})], axis=1)
-        # self.merged_frame = self.merged_frame.sort_values(by=column, ascending=(order == Qt.AscendingOrder))
-        # self.dataframe = self.merged_frame.iloc[:, :-1]
-        # self.colors_ordered = list(self.merged_frame.iloc[:, -1])
-        self.dataframe.sort_values(by=column, ascending=(order == Qt.AscendingOrder), inplace=True)
-        print(self.dataframe)
-
-        self.layoutChanged.emit()
-
-
-def layers2dict(viewer):
-    names = [layer.name for layer in viewer.layers]
-    res = {}
-    for ind, img in enumerate(viewer.layers):
-        res[names[ind]] = img
-
-    return res

@@ -7,7 +7,7 @@ see: https://napari.org/docs/dev/plugins/hook_specifications.html
 Replace code below according to your needs.
 """
 from napari_plugin_engine import napari_hook_implementation
-from napari_karyotype.KaryotypeWidget import KaryotypeWidget
+from napari_karyotype.karyotype_widget import KaryotypeWidget
 from skimage import io
 from pathlib import Path
 
