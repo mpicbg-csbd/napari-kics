@@ -1,12 +1,29 @@
 from skimage import io
 import pandas as pd
 
+from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from pathlib import Path
 
-class SavingManager():
+
+class SavingManager(QVBoxLayout):
 
     def __init__(self, viewer, table):
+
+        super().__init__()
+
         self.viewer = viewer
         self.table = table
+
+        from napari_karyotype.utils import ClickableLineEdit
+        self.save_path_line_edit = ClickableLineEdit(f"{Path(__file__).absolute().parent}/resources/example_output")
+
+        self.save_btn = QPushButton("Save")
+        self.save_btn.clicked.connect(lambda x: print(f"path is {self.save_path_line_edit.text()}"))
+
+        self.save_btn.clicked.connect(lambda e: self.save_output(self.save_path_line_edit.text()))
+
+        self.addWidget(self.save_path_line_edit)
+        self.addWidget(self.save_btn)
 
     def save_output(self, path):
         # images

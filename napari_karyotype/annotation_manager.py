@@ -1,16 +1,27 @@
 import numpy as np
 from skimage.measure import regionprops
 
-class AnnotationManager():
+from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from napari_karyotype.utils import get_img
 
-    def __init__(self, viewer, label_layer):
+class AnnotationManager(QVBoxLayout):
+
+    def __init__(self, viewer):
+
+        super().__init__()
         self.viewer = viewer
-        self.label_layer = label_layer
+
+
+        self.annotate_btn = QPushButton("Annotate")
+        self.annotate_btn.clicked.connect(self.annotate)
+
+        self.addWidget(self.annotate_btn)
 
     def bbox2shape(self, bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])
 
     def annotate(self, e):
+        self.label_layer = get_img("labelled", self.viewer)
 
         rp = regionprops(self.label_layer.data)
         boxes, labels, areas = zip(*[(self.bbox2shape(r.bbox), r.label, r.area) for r in rp])

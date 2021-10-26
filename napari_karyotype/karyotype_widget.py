@@ -26,6 +26,7 @@ from napari_karyotype.saving_manager import SavingManager
 
 from napari_karyotype.head_layout import HeadLayout
 from napari_karyotype.BlurWidget import BlurWidget
+from napari_karyotype.table_widget import LabelWidget
 
 
 # ------------------------------------------------------------------------
@@ -106,175 +107,27 @@ class KaryotypeWidget(QWidget):
         threshold_box.setSpacing(5)
 
         # ----------------------------------------------------------------------
-        # 3. Labeling step
-        # ----------------------------------------------------------------------
-
-        # the actual function
-        def label(img):
-            from scipy.ndimage import label
-            return label(img)[0]
-
-        # wrapper with napari updates
-        def label_wrapper():
-
-            input_image = get_img("thresholded", self.viewer).data
-            labelled = label(input_image)
-
-            try:
-                self.viewer.layers["labelled"].data = labelled
-            except KeyError:
-                self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
-
-        labeling_descr_label = QLabel(
-            "3. Apply label function to assign a unique integer id to each connected component:")
-        label_btn = QPushButton("Label")
-        label_btn.clicked.connect(lambda e: label_wrapper())
-
-        label_box = QVBoxLayout()
-        label_box.addWidget(labeling_descr_label)
-        label_box.addWidget(label_btn)
-        label_box.setSpacing(5)
-
-        self.layout.addLayout(self.head_layout)
-        self.layout.addLayout(self.blur_widget)
-        self.layout.addLayout(threshold_box)
-        self.layout.addLayout(label_box)
-
-        self.layout.setAlignment(Qt.AlignTop)
-        self.layout.setSpacing(20)
-
-        # ----------------------------------------------------------------------
         # table widget
         # ----------------------------------------------------------------------
 
-        self.table = QtWidgets.QTableView()
-        self.table.setSortingEnabled(True)
-        # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
-        self.table.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.label_widget = LabelWidget(self.viewer)
+        self.order_manager = OrderManager(self.viewer, self.label_widget.table)
+        self.annotation_manager = AnnotationManager(self.viewer)
+        self.saving_manager = SavingManager(self.viewer, self.label_widget.table)
 
-        def delete_label(viewer):
-
-            indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-            coords = [np.where(self.label_layer.data == label) for label in
-                      self.table.model().dataframe.index[indices]]
-            coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
-
-            print(f"[backspace]: removing indices {indices}")
-
-            [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
-
-        self.viewer.bind_key("Backspace", delete_label)
-
-        self.generate_table_btn = QtWidgets.QPushButton("Generate Table")
-
-        self.label_layer = None
-
-        self.history_queue_length = 0
-        self.history_last_step_length = 0
-
-        self.label_manager = None
-
-        def upd_table_new():
-
-            res_dict = self.label_manager.process_history_step()
-
-            print(f"res_dict is {res_dict}")
-
-            for (label, increment) in res_dict.items():
-
-                if not (label in self.table.model().dataframe.index):
-                    print(f"label {label} is not in the dataframe")
-                    self.table.model().dataframe = self.table.model().dataframe.append(
-                        pd.DataFrame([["", label, increment]], index=[label]))
-                    print(f"now it is \n{self.table.model().dataframe}")
-
-                else:
-                    self.table.model().dataframe.loc[label, 2] += increment
-
-                    if (self.table.model().dataframe.loc[label, 2] == 0):
-                        self.table.model().dataframe.drop(label, inplace=True)
-                        print(f"label {label} is set to 0")
-                self.table.update()
-                self.table.sortByColumn(2, Qt.DescendingOrder)
-
-        def initialize_table(label_layer):
-
-            from skimage.measure import regionprops
-            rp = regionprops(label_layer.data + 1)
-
-            res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
-            res = np.array(sorted(res, key=lambda x: x[0]))
-            l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
-
-            frame = pd.DataFrame(l)
-            self.table.setModel(PandasTableModel(frame, label_layer.get_color))
-            self.table.sortByColumn(2, Qt.DescendingOrder)
-
-        order_button = QPushButton("Adjust labelling order")
-        order_button.setCheckable(True)
-
-        annotate_btn = QPushButton("Annotate")
-
-        from napari_karyotype.utils import ClickableLineEdit
-        save_path_line_edit = ClickableLineEdit(f"{Path(__file__).absolute().parent}/resources/example_output")
-
-        save_btn = QPushButton("Save")
-        save_btn.clicked.connect(lambda x: print(f"path is {save_path_line_edit.text()}"))
-
-        def generate_new_model():
-
-            self.label_layer = self.viewer.layers.selection.active
-            initialize_table(get_img("labelled", self.viewer))
-            self.label_manager = LabelManager(get_img("labelled", self.viewer))
-            self.label_layer.events.set_data.connect(lambda x: upd_table_new())
-
-            def sync_selection_table2viewer(e):
-                indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-                self.label_layer.selected_label = self.table.model().dataframe.index[indices[0]]
-
-            self.table.clicked.connect(sync_selection_table2viewer)
-
-            def sync_selection_viewer2table(e):
-                sl = self.label_layer.selected_label
-                ind = self.table.model().dataframe.index.get_loc(sl)
-                self.table.selectRow(ind)
-
-            self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
-
-            order_button.clicked.connect(lambda e: order_button.setDown(order_button.isChecked()))
-            order_manager = OrderManager(self.viewer, self.label_layer, self.table)
-
-            def toggle_ordering_mode(flag):
-                if flag:
-                    order_manager.activate_ordering_mode()
-                else:
-                    order_manager.deactivate_ordering_mode()
-
-            order_button.clicked.connect(lambda e: toggle_ordering_mode(order_button.isChecked()))
-
-            # -------------------------------------------------------
-            # annotation
-            # -------------------------------------------------------
-
-            annotation_manager = AnnotationManager(self.viewer, self.label_layer)
-            annotate_btn.clicked.connect(annotation_manager.annotate)
-
-            # -------------------------------------------------------
-            # saving
-            # -------------------------------------------------------
-
-            saving_manager = SavingManager(self.viewer, self.table)
-            save_btn.clicked.connect(lambda e: saving_manager.save_output(save_path_line_edit.text()))
 
         # -------------------------------------------------------
         # adding widgets to the global layout
         # -------------------------------------------------------
-        self.layout.addWidget(self.generate_table_btn)
+        self.layout.addLayout(self.head_layout)
+        self.layout.addLayout(self.blur_widget)
+        self.layout.addLayout(threshold_box)
+        self.layout.addLayout(self.label_widget)
+        self.layout.addLayout(self.order_manager)
+        self.layout.addLayout(self.annotation_manager)
+        self.layout.addLayout(self.saving_manager)
 
-        self.layout.addWidget(order_button)
-        self.layout.addWidget(annotate_btn)
-        self.layout.addWidget(save_path_line_edit)
-        self.layout.addWidget(save_btn)
-        self.layout.addWidget(self.table)
 
-        self.generate_table_btn.clicked.connect(generate_new_model)
+        self.layout.setAlignment(Qt.AlignTop)
+        self.layout.setSpacing(20)
+

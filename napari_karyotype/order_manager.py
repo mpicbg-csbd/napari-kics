@@ -1,15 +1,36 @@
 from copy import deepcopy
 
+from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from napari_karyotype.utils import get_img
 
-class OrderManager():
 
-    def __init__(self, viewer, label_layer, table):
+class OrderManager(QVBoxLayout):
+
+    def __init__(self, viewer, table):
+
+        super().__init__()
 
         self.viewer = viewer
-        self.label_layer = label_layer
+
         self.table = table
 
         self.order = []
+
+        self.order_button = QPushButton("Adjust labelling order")
+        self.order_button.setCheckable(True)
+
+        self.order_button.clicked.connect(lambda e: self.order_button.setDown(self.order_button.isChecked()))
+
+
+        def toggle_ordering_mode(flag):
+            if flag:
+                self.activate_ordering_mode()
+            else:
+                self.deactivate_ordering_mode()
+
+        self.order_button.clicked.connect(lambda e: toggle_ordering_mode(self.order_button.isChecked()))
+
+        self.addWidget(self.order_button)
 
     def order_drag_callback(self, label_layer, event):
 
@@ -52,6 +73,8 @@ class OrderManager():
         print(f"order: {self.order}")
 
     def activate_ordering_mode(self):
+
+        self.label_layer = get_img("labelled", self.viewer)
 
         self.order.clear()
 
