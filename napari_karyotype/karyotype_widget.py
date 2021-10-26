@@ -20,6 +20,7 @@ from napari.qt import thread_worker
 from copy import deepcopy
 from napari_karyotype.utils import get_img
 from napari_karyotype.table_model import PandasTableModel
+from napari_karyotype.label_manager import LabelManager
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -326,7 +327,7 @@ class KaryotypeWidget(QWidget):
             self.history_queue_length = 0
             self.history_last_step_length = 0
 
-            from napari_karyotype.utils import LabelManager
+
             self.label_manager = None
 
             def upd_table_new():
