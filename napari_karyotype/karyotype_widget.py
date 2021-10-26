@@ -21,6 +21,7 @@ from copy import deepcopy
 from napari_karyotype.utils import get_img
 from napari_karyotype.table_model import PandasTableModel
 from napari_karyotype.label_manager import LabelManager
+from napari_karyotype.order_manager import OrderManager
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -264,7 +265,6 @@ class KaryotypeWidget(QWidget):
             # ----------------------------------------------------------------------
 
             # the actual function
-
             def label(img):
                 from scipy.ndimage import label
                 return label(img)[0]
@@ -399,101 +399,14 @@ class KaryotypeWidget(QWidget):
                 self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
 
                 order_button.clicked.connect(lambda e: order_button.setDown(order_button.isChecked()))
+                order_manager = OrderManager(self.viewer, self.label_layer, self.table)
 
-                order = []
-
-                def order_listener(label_layer, event):
-
-                    print(f"order listener: {event.position}")
-                    print(f"event type is {event.type}")
-
-                    yield
-
-                    while event.type == "mouse_move":
-                        if "Alt" in event.modifiers:
-                            print(label_layer.get_value(event.position))
-                            curr_label = label_layer.get_value(event.position)
-                            if (curr_label != 0 and curr_label is not None):
-                                label_layer.fill(event.position, 0)
-                                # order.append(curr_label)
-                                print(f"order list is {order}")
-
-                        yield
-
-                def parse_recent_step(layer):
-
-                    print(f"parse recent step")
-
-                    print(f"undo history\n {layer._undo_history}")
-                    print(f"redo history\n {layer._redo_history}")
-
-                    if len(layer._undo_history) != 0:
-                        recent_step = layer._undo_history[-1][-1]
-                        label = recent_step[1][0]
-
-                        if label not in order:
-                            order.append(label)
-                        else:
-                            recent_step = layer._redo_history[-1][-1]
-                            label = recent_step[1][0]
-                            order.remove(label)
-
-
-                    else:
-                        recent_step = layer._redo_history[-1][-1]
-                        label = recent_step[1][0]
-                        order.remove(label)
-
-                    print(f"recent label: {label}")
-                    print(f"order: {order}")
-
-                def activate_ordering_mode():
-
-                    order.clear()
-
-                    # make all the existing layers invisible
-                    for layer in self.viewer.layers:
-                        layer.visible = 0
-
-                    # add a new auxiliary ordering layer
-                    ordering_label_layer = self.viewer.add_labels(deepcopy(self.label_layer.data), name="ordering")
-                    ordering_label_layer.editable = False
-                    ordering_label_layer.mouse_drag_callbacks.append(order_listener)
-
-                    # attach the event listener
-                    ordering_label_layer.events.set_data.connect(lambda x: parse_recent_step(ordering_label_layer))
-
-                def deactivate_ordering_mode():
-
-                    # delete the auxiliary ordering layer
-                    names = [layer.name for layer in self.viewer.layers]
-                    ind = names.index("ordering")
-                    self.viewer.layers.pop(ind)
-
-                    # make other layers visible
-                    for layer in self.viewer.layers:
-                        layer.visible = 1
-
-                    print(f"order is {order}")
-
-                    if len(order) > 0:
-
-                        print("relabelling")
-                        for ind, label in enumerate(order):
-                            self.table.model().dataframe.at[label, 1] = ind + 1
-
-                        unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(order) - {0}
-
-                        for label in unprocessed_labels:
-                            self.table.model().dataframe.at[label, 1] = 9999
-
-                    self.table.update()
 
                 def toggle_ordering_mode(flag):
                     if flag:
-                        activate_ordering_mode()
+                        order_manager.activate_ordering_mode()
                     else:
-                        deactivate_ordering_mode()
+                        order_manager.deactivate_ordering_mode()
 
                 order_button.clicked.connect(lambda e: toggle_ordering_mode(order_button.isChecked()))
 
