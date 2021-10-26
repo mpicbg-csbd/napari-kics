@@ -11,34 +11,34 @@ class OrderManager():
 
         self.order = []
 
-    def order_drag_callback(self, event):
+    def order_drag_callback(self, label_layer, event):
 
         yield
 
         while event.type == "mouse_move":
             if "Alt" in event.modifiers:
-                curr_label = self.label_layer.get_value(event.position)
+                curr_label = label_layer.get_value(event.position)
 
                 if curr_label != 0 and curr_label is not None:
-                    self.label_layer.fill(event.position, 0)
+                    label_layer.fill(event.position, 0)
 
             yield
 
-    def parse_recent_step(self):
+    def parse_recent_step(self, label_layer):
 
         print(f"parse recent step")
 
-        print(f"undo history\n {self.label_layer._undo_history}")
-        print(f"redo history\n {self.label_layer._redo_history}")
+        print(f"undo history\n {label_layer._undo_history}")
+        print(f"redo history\n {label_layer._redo_history}")
 
-        if len(self.label_layer._undo_history) != 0:
-            recent_step = self.label_layer._undo_history[-1][-1]
+        if len(label_layer._undo_history) != 0:
+            recent_step = label_layer._undo_history[-1][-1]
             label = recent_step[1][0]
 
             if label not in self.order:
                 self.order.append(label)
             else:
-                recent_step = self.label_layer._redo_history[-1][-1]
+                recent_step = label_layer._redo_history[-1][-1]
                 label = recent_step[1][0]
                 self.order.remove(label)
 
