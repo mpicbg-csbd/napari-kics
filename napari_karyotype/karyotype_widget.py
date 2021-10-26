@@ -4,7 +4,6 @@ from qtpy.QtSvg import QSvgWidget
 from PyQt5.QtCore import Qt
 from qtpy import QtWidgets
 
-
 import napari, json, os
 from napari_karyotype.utils import create_widget
 
@@ -22,6 +21,9 @@ from napari_karyotype.utils import get_img
 from napari_karyotype.table_model import PandasTableModel
 from napari_karyotype.label_manager import LabelManager
 from napari_karyotype.order_manager import OrderManager
+from napari_karyotype.annotation_manager import AnnotationManager
+from napari_karyotype.saving_manager import SavingManager
+
 
 # ------------------------------------------------------------------------
 # Main pipeline widget
@@ -66,17 +68,7 @@ class KaryotypeWidget(QWidget):
 
         self.generate_gui_from_config()
 
-    def get_imgs_dict(self):
 
-        res = {}
-        names = [layer.name for layer in self.viewer.layers]
-        res[self.input_img_name] = self.viewer.layers[names.index(self.input_img_name)].data
-        res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
-        res["labelled"] = self.viewer.layers[names.index("labelled")].data
-
-        res["labelled_color"] = self.viewer.layers[names.index("labelled")].get_color(list(res["labelled"]))
-
-        return res
 
     def generate_gui_from_config(self,
                                  config_file_path=f"{Path(__file__).absolute().parent}/resources/config/config.json"):
@@ -327,7 +319,6 @@ class KaryotypeWidget(QWidget):
             self.history_queue_length = 0
             self.history_last_step_length = 0
 
-
             self.label_manager = None
 
             def upd_table_new():
@@ -366,7 +357,6 @@ class KaryotypeWidget(QWidget):
                 self.table.setModel(PandasTableModel(frame, label_layer.get_color))
                 self.table.sortByColumn(2, Qt.DescendingOrder)
 
-
             order_button = QPushButton("Adjust labelling order")
             order_button.setCheckable(True)
 
@@ -401,7 +391,6 @@ class KaryotypeWidget(QWidget):
                 order_button.clicked.connect(lambda e: order_button.setDown(order_button.isChecked()))
                 order_manager = OrderManager(self.viewer, self.label_layer, self.table)
 
-
                 def toggle_ordering_mode(flag):
                     if flag:
                         order_manager.activate_ordering_mode()
@@ -414,59 +403,15 @@ class KaryotypeWidget(QWidget):
                 # annotation
                 # -------------------------------------------------------
 
-                def bbox2shape(bbox):
-                    return np.array([[bbox[0], bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])
-
-                def annotate(e):
-
-                    from skimage.measure import regionprops
-                    rp = regionprops(self.label_layer.data)
-                    boxes, labels, areas = zip(*[(bbox2shape(r.bbox), r.label, r.area) for r in rp])
-                    print(f"boxes labels and areas have lngths {len(boxes), len(labels), len(areas)}")
-                    print(f"boxes labels and areas are {boxes, labels, areas}")
-
-                    properties = {"label": list(labels), "area": list(areas)}
-
-                    # https: // napari.org / tutorials / applications / annotate_segmentation.html
-                    text_parameters = {
-                        'text': '{area}',
-                        'size': 6,
-                        'color': 'red',
-                        'anchor': 'upper_left',
-                        # 'anchor': 'lower_left',
-                        # 'anchor': 'center',
-                        # 'translation': [75, 0],
-                        # 'rotation': -90
-                    }
-
-                    self.viewer.add_shapes(list(boxes), face_color=[0.0, 0.0, 0.0, 0.0], edge_width=2, edge_color='red',
-                                           properties=
-                                           properties, text=text_parameters)
-
-                annotate_btn.clicked.connect(annotate)
+                annotation_manager = AnnotationManager(self.viewer, self.label_layer)
+                annotate_btn.clicked.connect(annotation_manager.annotate)
 
                 # -------------------------------------------------------
                 # saving
                 # -------------------------------------------------------
 
-                def save_output(path):
-
-                    # images
-                    from skimage import io
-                    imgs_dict = self.get_imgs_dict()
-                    [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
-
-                    # dataframe
-                    dataframe = pd.DataFrame()
-                    dataframe["tags"] = list(self.table.model().dataframe[1])
-                    dataframe["labels"] = list(self.table.model().dataframe.index)
-                    dataframe["area"] = list(self.table.model().dataframe[2])
-                    dataframe.to_csv(f"{path}/data.csv", index=False)
-
-                    # screenshot
-                    self.viewer.screenshot(f"{path}/screenshot.png")
-
-                save_btn.clicked.connect(lambda e: save_output(save_path_line_edit.text()))
+                saving_manager = SavingManager(self.viewer, self.table)
+                save_btn.clicked.connect(lambda e: saving_manager.save_output(save_path_line_edit.text()))
 
             # -------------------------------------------------------
             # adding widgets to the global layout
@@ -480,5 +425,3 @@ class KaryotypeWidget(QWidget):
             self.layout.addWidget(self.table)
 
             self.generate_table_btn.clicked.connect(generate_new_model)
-
-
