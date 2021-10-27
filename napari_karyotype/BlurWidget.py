@@ -24,9 +24,11 @@ class BlurWidget(QVBoxLayout):
 
         def blur_wrapper(sigma):
 
+            if self.viewer.layers.selection.active is None:
+                raise Exception("No available images found. Please import a karyotype first.")
+
             input_image = self.viewer.layers.selection.active.data
-            self.input_img_name = self.viewer.layers.selection.active.name
-            print(f"[blur_wrapper]: input img name is {self.input_img_name}")
+
             blurred = blur(input_image, sigma)
 
             try:
@@ -37,7 +39,7 @@ class BlurWidget(QVBoxLayout):
 
         # blur step description label
         blur_descr_label = QLabel(
-            "1. Select the appropriate sigma value to denoise the image with a Gaussian blur:")
+            "1. Select an appropriate sigma value to denoise the image with a Gaussian blur:")
 
         # blur slider label
         blur_sl_label = QLabel("sigma:")
