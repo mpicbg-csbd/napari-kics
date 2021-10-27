@@ -57,9 +57,9 @@ class LabelWidget(QVBoxLayout):
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         dummy_frame = pd.DataFrame()
-        dummy_frame["0"] = [None]*10
-        dummy_frame["1"] = [None] * 10
-        dummy_frame["2"] = [None] * 10
+        dummy_frame["0"] = [""]*10
+        dummy_frame["1"] = [""] * 10
+        dummy_frame["2"] = [""] * 10
         dummy_frame.columns = ["color", "label", "area"]
         self.table.setModel(PandasTableModel(dummy_frame, lambda x: None))
         self.table.setDisabled(True)

@@ -1,7 +1,7 @@
 from skimage import io
 import pandas as pd
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from pathlib import Path
 
 
@@ -22,8 +22,12 @@ class SavingManager(QVBoxLayout):
 
         self.save_btn.clicked.connect(lambda e: self.save_output(self.save_path_line_edit.text()))
 
+        self.descr_label = QLabel("6. Save results to the the following directory:")
+
+        self.addWidget(self.descr_label)
         self.addWidget(self.save_path_line_edit)
         self.addWidget(self.save_btn)
+        self.setSpacing(5)
 
     def save_output(self, path):
         # images
@@ -33,9 +37,9 @@ class SavingManager(QVBoxLayout):
 
         # dataframe
         dataframe = pd.DataFrame()
-        dataframe["tags"] = list(self.table.model().dataframe[1])
+        dataframe["tags"] = list(self.table.model().dataframe["label"])
         dataframe["labels"] = list(self.table.model().dataframe.index)
-        dataframe["area"] = list(self.table.model().dataframe[2])
+        dataframe["area"] = list(self.table.model().dataframe["area"])
         dataframe.to_csv(f"{path}/data.csv", index=False)
 
         # screenshot

@@ -1,7 +1,7 @@
 import numpy as np
 from skimage.measure import regionprops
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari_karyotype.utils import get_img
 
 class AnnotationManager(QVBoxLayout):
@@ -15,7 +15,10 @@ class AnnotationManager(QVBoxLayout):
         self.annotate_btn = QPushButton("Annotate")
         self.annotate_btn.clicked.connect(self.annotate)
 
+        self.descr_label = QLabel("5. Annotate the image with bounding boxes and areas:")
+        self.addWidget(self.descr_label)
         self.addWidget(self.annotate_btn)
+        self.setSpacing(5)
 
     def bbox2shape(self, bbox):
         return np.array([[bbox[0], bbox[1]], [bbox[2], bbox[1]], [bbox[2], bbox[3]], [bbox[0], bbox[3]]])

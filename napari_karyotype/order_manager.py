@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari_karyotype.utils import get_img
 
 
@@ -30,7 +30,11 @@ class OrderManager(QVBoxLayout):
 
         self.order_button.clicked.connect(lambda e: toggle_ordering_mode(self.order_button.isChecked()))
 
+        self.descr_label = QLabel("4. Interactively adjust the label order -\n- activate the button and paint over the image with Alt + Left click:")
+
+        self.addWidget(self.descr_label)
         self.addWidget(self.order_button)
+        self.setSpacing(5)
 
     def order_drag_callback(self, label_layer, event):
 

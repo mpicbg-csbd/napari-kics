@@ -130,4 +130,5 @@ class KaryotypeWidget(QWidget):
 
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setSpacing(20)
+        self.setMaximumWidth(550)
 
