@@ -16,8 +16,10 @@ class BlurWidget(QVBoxLayout):
             from skimage.color import rgb2gray
             if (len(input_image.shape) == 3 and input_image.shape[-1] == 3):
                 img = rgb2gray(input_image)
-            else:
+            elif (len(input_image.shape) == 3 and input_image.shape[-1] == 1) or (len(input_image.shape) == 2):
                 img = input_image
+            else:
+                raise Exception(f"Cannot process image with type f{input_image.dtype} and shape {input_image.shape}.")
 
             from skimage.filters import gaussian
             return gaussian(img, sigma)
@@ -35,7 +37,7 @@ class BlurWidget(QVBoxLayout):
                 self.viewer.layers["blurred"].data = blurred
             except KeyError:
                 self.viewer.add_image(blurred, name="blurred")
-            self.viewer.layers.select_previous()
+
 
         # blur step description label
         blur_descr_label = QLabel(

@@ -4,6 +4,7 @@ import numpy as np
 class LabelHistoryProcessor():
 
     def __init__(self, label_layer):
+
         self.label_layer = label_layer
         self.history_queue_length = 0
         self.history_last_step_length = 0
@@ -44,7 +45,6 @@ class LabelHistoryProcessor():
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = new_length
             print(f"self history last step length is {self.history_last_step_length}")
-
 
         else:
             return {}

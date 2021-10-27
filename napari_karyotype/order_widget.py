@@ -10,32 +10,31 @@ class OrderWidget(QVBoxLayout):
 
         super().__init__()
 
+        # basic state
         self.viewer = viewer
         self.table = table
 
+        # list to store the reordering sequence
         self.order = []
 
+        # button configuration
         self.order_button = QPushButton("Adjust labelling order")
         self.order_button.setCheckable(True)
-
         self.order_button.clicked.connect(lambda e: self.order_button.setDown(self.order_button.isChecked()))
+        self.order_button.clicked.connect(lambda e: self.toggle_ordering_mode(self.order_button.isChecked()))
 
-        def toggle_ordering_mode(flag):
-            if flag:
-                self.activate_ordering_mode()
-            else:
-                self.deactivate_ordering_mode()
-
-        self.order_button.clicked.connect(lambda e: toggle_ordering_mode(self.order_button.isChecked()))
-
+        # description label
         self.descr_label = QLabel(
             "4. Interactively adjust the label order -\n- activate the button and paint over the image with Alt + Left click:")
 
+        # layout
         self.addWidget(self.descr_label)
         self.addWidget(self.order_button)
         self.setSpacing(5)
 
     def order_drag_callback(self, label_layer, event):
+
+        """label layer drag callback to remove the labels that have been crossed-out (added to the self.order list)"""
 
         yield
 
@@ -49,6 +48,8 @@ class OrderWidget(QVBoxLayout):
             yield
 
     def parse_recent_step(self, label_layer):
+
+        """a function to parse the recent history step to extract the recent changes in the label layer"""
 
         print(f"parse recent step")
 
@@ -77,6 +78,8 @@ class OrderWidget(QVBoxLayout):
 
     def activate_ordering_mode(self):
 
+        """create the new label layer and allow relabelling"""
+
         self.label_layer = get_img("labelled", self.viewer)
 
         self.order.clear()
@@ -94,6 +97,8 @@ class OrderWidget(QVBoxLayout):
         ordering_label_layer.events.set_data.connect(lambda x: self.parse_recent_step(ordering_label_layer))
 
     def deactivate_ordering_mode(self):
+
+        """remove the auxiliary layer and update the current labels according to the generated relabeling"""
 
         # delete the auxiliary ordering layer
         names = [layer.name for layer in self.viewer.layers]
@@ -118,3 +123,12 @@ class OrderWidget(QVBoxLayout):
                 self.table.model().dataframe.at[label, "label"] = 9999
 
         self.table.update()
+
+    def toggle_ordering_mode(self, flag):
+
+        """switch between the modes"""
+
+        if flag:
+            self.activate_ordering_mode()
+        else:
+            self.deactivate_ordering_mode()

@@ -13,20 +13,13 @@ class ThresholdWidget(QVBoxLayout):
 
         # the actual function
         def threshold(input_image, threshold_value=0.5):
-
-            from skimage.color import rgb2gray
-            if (len(input_image.shape) == 3 and input_image.shape[-1] == 3):
-                img = rgb2gray(input_image)
-            else:
-                img = input_image
-
-            return ((1 - img) > threshold_value).astype(int)
+            return ((1 - input_image) > threshold_value).astype(int)
 
         # wrapper with napari updates
         def threshold_wrapper(threshold_value=0.5):
             input_image = get_img("blurred", self.viewer).data
             thresholded = threshold(input_image, threshold_value)
-            # threshold_updater("thresholded", thresholded, self.viewer)
+
             try:
                 self.viewer.layers["thresholded"].data = thresholded
             except KeyError:
