@@ -56,6 +56,14 @@ class LabelWidget(QVBoxLayout):
         self.table.setSortingEnabled(True)
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        dummy_frame = pd.DataFrame()
+        dummy_frame["0"] = [None]*10
+        dummy_frame["1"] = [None] * 10
+        dummy_frame["2"] = [None] * 10
+        dummy_frame.columns = ["color", "label", "area"]
+        self.table.setModel(PandasTableModel(dummy_frame, lambda x: None))
+        self.table.setDisabled(True)
+
 
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
 
@@ -71,8 +79,10 @@ class LabelWidget(QVBoxLayout):
         l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
 
         frame = pd.DataFrame(l)
+        frame.columns = ["color", "label", "area"]
         self.table.setModel(PandasTableModel(frame, self.label_layer.get_color))
         self.table.sortByColumn(2, Qt.DescendingOrder)
+        self.table.setDisabled(False)
 
         def sync_selection_table2viewer(e):
             indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
@@ -111,13 +121,14 @@ class LabelWidget(QVBoxLayout):
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
                 self.table.model().dataframe = self.table.model().dataframe.append(
-                    pd.DataFrame([["", label, increment]], index=[label]))
+                    # pd.DataFrame([["", label, increment]], index=[label]))
+                    pd.DataFrame([["", label, increment]], columns=["color", "label", "area"], index=[label]))
                 print(f"now it is \n{self.table.model().dataframe}")
 
             else:
-                self.table.model().dataframe.loc[label, 2] += increment
+                self.table.model().dataframe.loc[label, "area"] += increment
 
-                if (self.table.model().dataframe.loc[label, 2] == 0):
+                if (self.table.model().dataframe.loc[label, "area"] == 0):
                     self.table.model().dataframe.drop(label, inplace=True)
                     print(f"label {label} is set to 0")
             self.table.update()

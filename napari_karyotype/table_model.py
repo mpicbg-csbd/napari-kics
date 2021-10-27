@@ -33,7 +33,7 @@ class PandasTableModel(QtCore.QAbstractTableModel):
         if role != QtCore.Qt.DisplayRole:
             return QtCore.QVariant()
 
-        return str(self.dataframe.iloc[QModelIndex.row()][QModelIndex.column()])
+        return str(self.dataframe.iloc[QModelIndex.row(), QModelIndex.column()])
 
     def headerData(self, p_int, Qt_Orientation, role=None):
 
@@ -60,5 +60,5 @@ class PandasTableModel(QtCore.QAbstractTableModel):
     # https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
     def sort(self, column, order):
         self.layoutAboutToBeChanged.emit()
-        self.dataframe.sort_values(by=column, ascending=(order == QtCore.Qt.AscendingOrder), inplace=True)
+        self.dataframe.sort_values(by=self.dataframe.columns[column], ascending=(order == QtCore.Qt.AscendingOrder), inplace=True)
         self.layoutChanged.emit()

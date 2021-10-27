@@ -107,11 +107,11 @@ class OrderManager(QVBoxLayout):
 
             print("relabelling")
             for ind, label in enumerate(self.order):
-                self.table.model().dataframe.at[label, 1] = ind + 1
+                self.table.model().dataframe.at[label, "label"] = ind + 1
 
             unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(self.order) - {0}
 
             for label in unprocessed_labels:
-                self.table.model().dataframe.at[label, 1] = 9999
+                self.table.model().dataframe.at[label, "label"] = 9999
 
         self.table.update()
