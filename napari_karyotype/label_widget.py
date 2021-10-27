@@ -7,13 +7,15 @@ from skimage.measure import regionprops
 
 from napari_karyotype.utils import get_img
 from napari_karyotype.table_model import PandasTableModel
-from napari_karyotype.label_manager import LabelManager
+from napari_karyotype.label_history_processor import LabelHistoryProcessor
 
 
 class LabelWidget(QVBoxLayout):
 
     def __init__(self, viewer):
         super().__init__()
+
+        self.viewer = viewer
 
         # the actual function
         def label(img):
@@ -32,11 +34,8 @@ class LabelWidget(QVBoxLayout):
                 self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
 
             self.label_layer = get_img("labelled", self.viewer)
-            self.label_manager = LabelManager(get_img("labelled", self.viewer))
-
-
+            self.label_manager = LabelHistoryProcessor(get_img("labelled", self.viewer))
             self.generate_table()
-
             self.label_layer.events.set_data.connect(lambda x: self.update_table())
 
         labeling_descr_label = QLabel(
@@ -48,26 +47,22 @@ class LabelWidget(QVBoxLayout):
         self.addWidget(label_btn)
         self.setSpacing(5)
 
-        # -----------------------------------------------------------------
-
-        self.viewer = viewer
-
+        # initializing the table with a dummy (empty) dataframe
         self.table = QTableView()
         self.table.setSortingEnabled(True)
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+
         dummy_frame = pd.DataFrame()
-        dummy_frame["0"] = [""]*10
+        dummy_frame["0"] = [""] * 10
         dummy_frame["1"] = [""] * 10
         dummy_frame["2"] = [""] * 10
         dummy_frame.columns = ["color", "label", "area"]
+
         self.table.setModel(PandasTableModel(dummy_frame, lambda x: None))
         self.table.setDisabled(True)
 
-
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
-
-
 
         self.addWidget(self.table)
 
@@ -97,8 +92,6 @@ class LabelWidget(QVBoxLayout):
 
         self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
 
-
-
     def delete_selected_labels(self, e):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
         coords = [np.where(self.label_layer.data == label) for label in
@@ -108,7 +101,6 @@ class LabelWidget(QVBoxLayout):
         print(f"[backspace]: removing indices {indices}")
 
         [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
-
 
     def update_table(self):
 

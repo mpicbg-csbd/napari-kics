@@ -1,6 +1,7 @@
 import numpy as np
 
-class LabelManager():
+
+class LabelHistoryProcessor():
 
     def __init__(self, label_layer):
         self.label_layer = label_layer

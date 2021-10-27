@@ -8,8 +8,8 @@ from qtpy.QtCore import Qt
 class HeadLayout(QHBoxLayout):
 
     def __init__(self):
-
         super().__init__()
+
         # svg widget
         logo_size = 85
         logoSvgWidget = QSvgWidget(f"{Path(__file__).absolute().parent}/resources/artwork/logo.svg")

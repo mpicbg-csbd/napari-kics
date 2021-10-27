@@ -4,13 +4,12 @@ from skimage.measure import regionprops
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari_karyotype.utils import get_img
 
-class AnnotationManager(QVBoxLayout):
+
+class AnnotationWidget(QVBoxLayout):
 
     def __init__(self, viewer):
-
         super().__init__()
         self.viewer = viewer
-
 
         self.annotate_btn = QPushButton("Annotate")
         self.annotate_btn.clicked.connect(self.annotate)

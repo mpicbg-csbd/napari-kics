@@ -5,10 +5,9 @@ from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from pathlib import Path
 
 
-class SavingManager(QVBoxLayout):
+class SavingWidget(QVBoxLayout):
 
     def __init__(self, viewer, table):
-
         super().__init__()
 
         self.viewer = viewer

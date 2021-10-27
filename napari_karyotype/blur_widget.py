@@ -1,8 +1,8 @@
 from qtpy.QtWidgets import QLabel, QSlider, QHBoxLayout, QVBoxLayout
 from qtpy.QtCore import Qt
 
-class BlurWidget(QVBoxLayout):
 
+class BlurWidget(QVBoxLayout):
 
     def __init__(self, viewer):
 
@@ -66,7 +66,6 @@ class BlurWidget(QVBoxLayout):
         blur_box_.addWidget(sigma_sl_val)
         blur_box_.setSpacing(0)
         blur_box_.setContentsMargins(0, 0, 0, 0)
-
 
         self.addWidget(blur_descr_label)
         self.addLayout(blur_box_)
