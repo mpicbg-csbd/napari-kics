@@ -73,6 +73,12 @@ class LabelWidget(QVBoxLayout):
         res = np.array(sorted(res, key=lambda x: x[0]))
         l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
 
+        self.coords = {}
+        for r in rp:
+         self.coords[r.label-1] = tuple(r.coords[0])
+
+        print(self.coords)
+
         frame = pd.DataFrame(l)
         frame.columns = ["color", "label", "area"]
         self.table.setModel(PandasTableModel(frame, self.label_layer.get_color))
@@ -96,13 +102,28 @@ class LabelWidget(QVBoxLayout):
 
     def delete_selected_labels(self, e):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-        coords = [np.where(self.label_layer.data == label) for label in
-                  self.table.model().dataframe.index[indices]]
-        coords_to_fill = [(co[0][0], co[1][0]) for co in coords]
+        # coords = [np.where(self.label_layer.data == label) for label in
+        #           self.table.model().dataframe.index[indices]]
+
+        coords = []
+
+        for label in self.table.model().dataframe.index[indices]:
+            if label in self.coords.keys() and self.label_layer.data[self.coords[label]]==label:
+                # print(f"[delete_selected_label]: label found clause")
+                coords.append(self.coords[label])
+            else:
+                # print(f"[delete_selected_label]: label not found clause")
+                # print(f"label is {label}, coords are {self.coords[label]}, value at popsition is {self.label_layer.data[self.coords[label]]}")
+                c = np.argwhere(self.label_layer.data==label)[0]
+                coords.append(c)
+
+
+        # coords_to_fill = [(co[0], co[1][0]) for co in coords]
 
         print(f"[backspace]: removing indices {indices}")
+        print(f"[backspace]: coords list is {coords}")
 
-        [self.label_layer.fill(coord, 0) for coord in coords_to_fill]
+        [self.label_layer.fill(coord, 0) for coord in coords]
 
     def update_table(self):
 

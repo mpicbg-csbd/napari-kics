@@ -10,11 +10,11 @@ class LabelHistoryProcessor():
         self.history_last_step_length = 0
 
     def process_history_step(self):
-        print(f"[process_history_step]: entry")
-        print(f"[process_history_step]: undo history is {self.label_layer._undo_history}")
-        print(f"[process_history_step]: redo history is {self.label_layer._redo_history}")
+        # print(f"[process_history_step]: entry")
+        # print(f"[process_history_step]: undo history is {self.label_layer._undo_history}")
+        # print(f"[process_history_step]: redo history is {self.label_layer._redo_history}")
 
-        print(f"")
+        # print(f"")
 
         # apparently, undo and redo history get erased upon the layer visibility toggle
         # first clause is to account for that, should refactor the entire "if" later on
@@ -28,7 +28,7 @@ class LabelHistoryProcessor():
             step = self.label_layer._undo_history[-1]
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = len(step)
-            print(f"self history last step length is {self.history_last_step_length}")
+            # print(f"self history last step length is {self.history_last_step_length}")
 
         elif len(self.label_layer._undo_history) < self.history_queue_length:
             factor = -1
@@ -44,7 +44,7 @@ class LabelHistoryProcessor():
             step = step_[self.history_last_step_length:new_length]
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = new_length
-            print(f"self history last step length is {self.history_last_step_length}")
+            # print(f"self history last step length is {self.history_last_step_length}")
 
         else:
             return {}
@@ -70,6 +70,6 @@ class LabelHistoryProcessor():
             else:
                 res_dict[label_added] = factor * np.sum(labels_remove_counts)
 
-            print(f"dict at the current substep: {res_dict}")
+            # print(f"dict at the current substep: {res_dict}")
 
         return res_dict
