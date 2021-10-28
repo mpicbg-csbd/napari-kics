@@ -71,7 +71,8 @@ class LabelWidget(QVBoxLayout):
 
         res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
         res = np.array(sorted(res, key=lambda x: x[0]))
-        l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
+        # l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
+        l = [("", str(res[ind, 0]), res[ind, 1]) for ind in range(len(res))]
 
         self.coords = {}
         for r in rp:
