@@ -87,8 +87,10 @@ class LabelWidget(QVBoxLayout):
 
         def sync_selection_viewer2table(e):
             sl = self.label_layer.selected_label
-            ind = self.table.model().dataframe.index.get_loc(sl)
-            self.table.selectRow(ind)
+
+            if sl in self.table.model().dataframe.index:
+                ind = self.table.model().dataframe.index.get_loc(sl)
+                self.table.selectRow(ind)
 
         self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
 
