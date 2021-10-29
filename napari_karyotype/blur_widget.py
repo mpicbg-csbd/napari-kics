@@ -9,6 +9,7 @@ class BlurWidget(QVBoxLayout):
         super().__init__()
 
         self.viewer = viewer
+        self.input_image = None
 
         # actual function
         def blur(input_image, sigma=1.0):
@@ -26,18 +27,19 @@ class BlurWidget(QVBoxLayout):
 
         def blur_wrapper(sigma):
 
-            if self.viewer.layers.selection.active is None:
-                raise Exception("No available images found. Please import a karyotype first.")
+            if self.input_image is None:
+                if self.viewer.layers.selection.active is None:
+                    raise Exception("No available images found. Please import a karyotype first.")
 
-            input_image = self.viewer.layers.selection.active.data
+                self.input_image = self.viewer.layers.selection.active.data
 
-            blurred = blur(input_image, sigma)
+            blurred = blur(self.input_image, sigma)
 
             try:
                 self.viewer.layers["blurred"].data = blurred
             except KeyError:
                 self.viewer.add_image(blurred, name="blurred")
-
+            # self.viewer.layers.select_previous()
 
         # blur step description label
         blur_descr_label = QLabel(
@@ -53,7 +55,7 @@ class BlurWidget(QVBoxLayout):
         sigma_slider.setSingleStep(1)
         sigma_slider.setTickInterval(20)
         sigma_slider.setTickPosition(QSlider.TicksBelow)
-        sigma_slider.setValue(50)
+        sigma_slider.setValue(0)
         sigma_slider.setFixedWidth(400)
 
         # sigma slider value
