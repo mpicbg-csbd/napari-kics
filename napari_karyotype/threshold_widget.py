@@ -26,10 +26,14 @@ class ThresholdWidget(QVBoxLayout):
 
             try:
                 self.viewer.layers["thresholded"].data = thresholded
+                self.viewer.layers["thresholded"].visible = True
             except KeyError:
                 self.viewer.add_image(
                     thresholded, name="thresholded", opacity=0.7, colormap="red"
                 )
+
+            if "labelled" in self.viewer.layers:
+                self.viewer.layers["labelled"].visible = False
 
         # thresholding step description label
         th_descr_label = QLabel(

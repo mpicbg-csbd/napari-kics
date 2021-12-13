@@ -1,4 +1,10 @@
-from qtpy.QtWidgets import QTableView, QAbstractItemView, QPushButton, QVBoxLayout, QLabel
+from qtpy.QtWidgets import (
+    QTableView,
+    QAbstractItemView,
+    QPushButton,
+    QVBoxLayout,
+    QLabel,
+)
 from qtpy.QtCore import Qt
 
 import numpy as np
@@ -11,7 +17,6 @@ from napari_karyotype.label_history_processor import LabelHistoryProcessor
 
 
 class LabelWidget(QVBoxLayout):
-
     def __init__(self, viewer):
         super().__init__()
 
@@ -20,6 +25,7 @@ class LabelWidget(QVBoxLayout):
         # the actual function
         def label(img):
             from scipy.ndimage import label
+
             return label(img)[0]
 
         # wrapper with napari updates
@@ -28,8 +34,11 @@ class LabelWidget(QVBoxLayout):
             input_image = get_img("thresholded", self.viewer).data
             labelled = label(input_image)
 
+            self.viewer.layers["thresholded"].visible = False
+
             try:
                 self.viewer.layers["labelled"].data = labelled
+                self.viewer.layers["labelled"].visible = True
             except KeyError:
                 self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
 
@@ -39,7 +48,8 @@ class LabelWidget(QVBoxLayout):
             self.label_layer.events.set_data.connect(lambda x: self.update_table())
 
         labeling_descr_label = QLabel(
-            "3. Apply label function to assign a unique integer id to each connected component:")
+            "3. Apply label function to assign a unique integer id to each connected component:"
+        )
         label_btn = QPushButton("Label")
         label_btn.clicked.connect(lambda e: label_wrapper())
 
@@ -76,7 +86,7 @@ class LabelWidget(QVBoxLayout):
 
         self.coords = {}
         for r in rp:
-         self.coords[r.label-1] = tuple(r.coords[0])
+            self.coords[r.label - 1] = tuple(r.coords[0])
 
         print(self.coords)
 
@@ -88,7 +98,9 @@ class LabelWidget(QVBoxLayout):
 
         def sync_selection_table2viewer(e):
             indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-            self.label_layer.selected_label = self.table.model().dataframe.index[indices[0]]
+            self.label_layer.selected_label = self.table.model().dataframe.index[
+                indices[0]
+            ]
 
         self.table.clicked.connect(sync_selection_table2viewer)
 
@@ -109,15 +121,17 @@ class LabelWidget(QVBoxLayout):
         coords = []
 
         for label in self.table.model().dataframe.index[indices]:
-            if label in self.coords.keys() and self.label_layer.data[self.coords[label]]==label:
+            if (
+                label in self.coords.keys()
+                and self.label_layer.data[self.coords[label]] == label
+            ):
                 # print(f"[delete_selected_label]: label found clause")
                 coords.append(self.coords[label])
             else:
                 # print(f"[delete_selected_label]: label not found clause")
                 # print(f"label is {label}, coords are {self.coords[label]}, value at popsition is {self.label_layer.data[self.coords[label]]}")
-                c = np.argwhere(self.label_layer.data==label)[0]
+                c = np.argwhere(self.label_layer.data == label)[0]
                 coords.append(c)
-
 
         # coords_to_fill = [(co[0], co[1][0]) for co in coords]
 
@@ -138,13 +152,18 @@ class LabelWidget(QVBoxLayout):
                 print(f"label {label} is not in the dataframe")
                 self.table.model().dataframe = self.table.model().dataframe.append(
                     # pd.DataFrame([["", label, increment]], index=[label]))
-                    pd.DataFrame([["", label, increment]], columns=["color", "label", "area"], index=[label]))
+                    pd.DataFrame(
+                        [["", label, increment]],
+                        columns=["color", "label", "area"],
+                        index=[label],
+                    )
+                )
                 print(f"now it is \n{self.table.model().dataframe}")
 
             else:
                 self.table.model().dataframe.loc[label, "area"] += increment
 
-                if (self.table.model().dataframe.loc[label, "area"] == 0):
+                if self.table.model().dataframe.loc[label, "area"] == 0:
                     self.table.model().dataframe.drop(label, inplace=True)
                     print(f"label {label} is set to 0")
             self.table.update()
