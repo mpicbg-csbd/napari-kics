@@ -1,8 +1,10 @@
 from copy import deepcopy
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
 from napari_karyotype.utils import get_img
+from napari_karyotype.guess_chromosome_labels import guess_chromosome_labels
 from math import hypot
+from skimage.measure import regionprops
 
 
 class OrderWidget(QVBoxLayout):
@@ -19,24 +21,50 @@ class OrderWidget(QVBoxLayout):
         self.order_new = []
 
         # button configuration
-        self.order_button = QPushButton("Adjust labelling order")
-        self.order_button.setCheckable(True)
-        self.order_button.clicked.connect(
-            lambda e: self.order_button.setDown(self.order_button.isChecked())
-        )
-        self.order_button.clicked.connect(
-            lambda e: self.toggle_ordering_mode(self.order_button.isChecked())
+        self.guess_order_button = QPushButton("Automatically guess order")
+        self.guess_order_button.clicked.connect(
+            lambda e: self.guess_chromosome_labels()
         )
 
-        # description label
-        self.descr_label = QLabel(
-            "4. Interactively adjust the label order -\n- activate the button and paint over the image with Shift + Left click:"
+        self.manual_order_button = QPushButton("Manual labelling")
+        self.manual_order_button.setCheckable(True)
+        self.manual_order_button.clicked.connect(
+            lambda e: self.manual_order_button.setDown(
+                self.manual_order_button.isChecked()
+            )
         )
+        self.manual_order_button.clicked.connect(
+            lambda e: self.toggle_ordering_mode(self.manual_order_button.isChecked())
+        )
+
+        self.buttons_container = QHBoxLayout()
+        self.buttons_container.addWidget(self.guess_order_button)
+        self.buttons_container.addWidget(self.manual_order_button)
+
+        # description label
+        self.descr_label = QLabel("4. Adjust the label order.")
 
         # layout
         self.addWidget(self.descr_label)
-        self.addWidget(self.order_button)
+        self.addLayout(self.buttons_container)
         self.setSpacing(5)
+
+    def guess_chromosome_labels(self):
+        print("[guess_chromosome_labels]: guessing...")
+        self.label_layer = get_img("labelled", self.viewer)
+        props = regionprops(self.label_layer.data)
+        bounding_boxes = [rp.bbox for rp in regionprops(self.label_layer.data)]
+        img_labels = [rp.label for rp in regionprops(self.label_layer.data)]
+        try:
+            chr_labels = guess_chromosome_labels(bounding_boxes)
+        except Exception as e:
+            raise Exception(f"Gueesing chromomsome labels failed: {e}")
+
+        region_table = self.table.model().dataframe
+        for img_label, chr_label in zip(img_labels, chr_labels):
+            region_table.at[img_label, "label"] = chr_label
+        self.table.update()
+        print("[guess_chromosome_labels]: sucess")
 
     def order_drag_callback(self, label_layer, event):
 
