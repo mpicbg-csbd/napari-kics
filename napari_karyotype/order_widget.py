@@ -5,7 +5,6 @@ from napari_karyotype.utils import get_img
 
 
 class OrderWidget(QVBoxLayout):
-
     def __init__(self, viewer, table):
 
         super().__init__()
@@ -21,12 +20,17 @@ class OrderWidget(QVBoxLayout):
         # button configuration
         self.order_button = QPushButton("Adjust labelling order")
         self.order_button.setCheckable(True)
-        self.order_button.clicked.connect(lambda e: self.order_button.setDown(self.order_button.isChecked()))
-        self.order_button.clicked.connect(lambda e: self.toggle_ordering_mode(self.order_button.isChecked()))
+        self.order_button.clicked.connect(
+            lambda e: self.order_button.setDown(self.order_button.isChecked())
+        )
+        self.order_button.clicked.connect(
+            lambda e: self.toggle_ordering_mode(self.order_button.isChecked())
+        )
 
         # description label
         self.descr_label = QLabel(
-            "4. Interactively adjust the label order -\n- activate the button and paint over the image with Alt + Left click:")
+            "4. Interactively adjust the label order -\n- activate the button and paint over the image with Shift + Left click:"
+        )
 
         # layout
         self.addWidget(self.descr_label)
@@ -43,7 +47,7 @@ class OrderWidget(QVBoxLayout):
         yield
 
         while event.type == "mouse_move":
-            if "Alt" in event.modifiers:
+            if "Shift" in event.modifiers:
                 curr_label = label_layer.get_value(event.position)
 
                 print(f"[drag_callback]: label is {curr_label}")
@@ -51,7 +55,6 @@ class OrderWidget(QVBoxLayout):
                 if curr_label != 0 and curr_label is not None:
                     label_layer.fill(event.position, 0)
                     curr_order.append(curr_label)
-
 
             yield
 
@@ -85,7 +88,6 @@ class OrderWidget(QVBoxLayout):
                 if len(last_list) == 0:
                     self.order_new.pop(-1)
 
-
         else:
             recent_step = self.label_layer._redo_history[-1][-1]
             label = recent_step[1][0]
@@ -114,12 +116,16 @@ class OrderWidget(QVBoxLayout):
             layer.visible = 0
 
         # add a new auxiliary ordering layer
-        ordering_label_layer = self.viewer.add_labels(deepcopy(self.label_layer.data), name="ordering")
+        ordering_label_layer = self.viewer.add_labels(
+            deepcopy(self.label_layer.data), name="ordering"
+        )
         ordering_label_layer.editable = False
         ordering_label_layer.mouse_drag_callbacks.append(self.order_drag_callback)
 
         # attach the event listener
-        ordering_label_layer.events.set_data.connect(lambda x: self.parse_recent_step(ordering_label_layer))
+        ordering_label_layer.events.set_data.connect(
+            lambda x: self.parse_recent_step(ordering_label_layer)
+        )
 
     def deactivate_ordering_mode(self):
 
@@ -148,15 +154,16 @@ class OrderWidget(QVBoxLayout):
 
             for ind, label_list in enumerate(self.order_new):
                 for subind, label in enumerate(label_list):
-                    self.table.model().dataframe.at[label, "label"] = str(ind+1)+string.ascii_lowercase[subind]
+                    self.table.model().dataframe.at[label, "label"] = (
+                        str(ind + 1) + string.ascii_lowercase[subind]
+                    )
 
-            unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(self.order) - {0}
-
-
+            unprocessed_labels = (
+                set(list(self.table.model().dataframe.index)) - set(self.order) - {0}
+            )
 
             for label in unprocessed_labels:
                 self.table.model().dataframe.at[label, "label"] = "9999"
-
 
         self.order = []
         self.order_new = []
