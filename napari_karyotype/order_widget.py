@@ -2,6 +2,7 @@ from copy import deepcopy
 
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari_karyotype.utils import get_img
+from math import hypot
 
 
 class OrderWidget(QVBoxLayout):
@@ -44,18 +45,41 @@ class OrderWidget(QVBoxLayout):
         print(f"[drag_callback]: drag started")
         curr_order = []
 
+        def maybe_add_label_at(position):
+            curr_label = label_layer.get_value(position)
+
+            if (
+                curr_label != 0
+                and curr_label is not None
+                and (len(curr_order) == 0 or curr_order[-1] != curr_label)
+            ):
+                label_layer.fill(position, 0)
+                curr_order.append(curr_label)
+
+        def add_labels_on_line(from_pos, to_pos):
+            # vector pointing from from_pos to to_pos
+            delta = (to_pos[0] - from_pos[0], to_pos[1] - from_pos[1])
+            # increment vector that has unit length
+            increment = (
+                delta[0] / hypot(*delta),
+                delta[1] / hypot(*delta),
+            )
+
+            # while delta and increment point in the same direction
+            while delta[0] * increment[0] + delta[1] * increment[1] > 0:
+                # see if we find a new label
+                maybe_add_label_at(from_pos)
+                # move one step further
+                from_pos = (from_pos[0] + increment[0], from_pos[1] + increment[1])
+                delta = (to_pos[0] - from_pos[0], to_pos[1] - from_pos[1])
+
         yield
 
         while event.type == "mouse_move":
             if "Shift" in event.modifiers:
-                curr_label = label_layer.get_value(event.position)
-
-                print(f"[drag_callback]: label is {curr_label}")
-
-                if curr_label != 0 and curr_label is not None:
-                    label_layer.fill(event.position, 0)
-                    curr_order.append(curr_label)
-
+                if not event.last_event is None:
+                    add_labels_on_line(event.last_event.position, event.position)
+                maybe_add_label_at(event.position)
             yield
 
         print(f"[drag_callback]: curr order is {curr_order}")
