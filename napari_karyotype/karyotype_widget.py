@@ -12,7 +12,6 @@ from napari_karyotype.threshold_widget import ThresholdWidget
 
 # main widget
 class KaryotypeWidget(QWidget):
-
     def __init__(self, napari_viewer):
         super().__init__()
 
@@ -46,7 +45,7 @@ class KaryotypeWidget(QWidget):
         self.layout.addLayout(self.order_widget)
 
         # annotation
-        self.annotation_widget = AnnotationWidget(self.viewer)
+        self.annotation_widget = AnnotationWidget(self.viewer, self.label_widget.table)
         self.layout.addLayout(self.annotation_widget)
 
         # saving
