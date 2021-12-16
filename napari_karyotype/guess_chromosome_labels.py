@@ -9,6 +9,24 @@ class ChromosomeLabel(namedtuple("ChromosomeLabel", ["major", "minor", "row", "c
     def __str__(self):
         return f"{self.major:02d}{chr(ord('a') + self.minor)}"
 
+    def __lt__(self, other):
+        if isinstance(other, ChromosomeLabel):
+            return super().__lt__(other)
+        else:
+            return str(self) < str(other)
+
+    def __gt__(self, other):
+        if isinstance(other, ChromosomeLabel):
+            return super().__gt__(other)
+        else:
+            return str(self) < str(other)
+
+    def __eq__(self, other):
+        if isinstance(other, ChromosomeLabel):
+            return super().__gt__(other)
+        else:
+            return str(self) < str(other)
+
 
 class IndexedInterval(namedtuple("IndexedInterval", ["begin", "end", "index"])):
     __slots__ = ()
