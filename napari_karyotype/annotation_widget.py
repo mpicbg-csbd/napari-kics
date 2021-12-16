@@ -54,12 +54,20 @@ class AnnotationWidget(QVBoxLayout):
             "anchor": "upper_left",
         }
 
-        self.viewer.add_shapes(
-            list(bboxes),
-            name="annotations",
-            face_color="transparent",
-            edge_width=2,
-            edge_color="red",
-            properties=properties,
-            text=text_parameters,
-        )
+        try:
+            annotation_layer = next(
+                l for l in self.viewer.layers if l.name == "annotations"
+            )
+            annotation_layer.data = bboxes
+            annotation_layer.properties = properties
+            annotation_layer.refresh()
+        except StopIteration:
+            self.viewer.add_shapes(
+                bboxes,
+                name="annotations",
+                face_color="transparent",
+                edge_width=2,
+                edge_color="red",
+                properties=properties,
+                text=text_parameters,
+            )
