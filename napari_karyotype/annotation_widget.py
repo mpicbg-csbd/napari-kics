@@ -32,7 +32,6 @@ class AnnotationWidget(QVBoxLayout):
         )
 
     def annotate(self, e):
-        self.label_layer = get_img("labelled", self.viewer)
         labels = [str(l) for l in self.table.model().dataframe.loc[:, "label"]]
         areas = [str(a) for a in self.table.model().dataframe.loc[:, "area"]]
         bboxes = [
@@ -60,7 +59,7 @@ class AnnotationWidget(QVBoxLayout):
             )
             annotation_layer.data = bboxes
             annotation_layer.properties = properties
-            annotation_layer.refresh()
+            # annotation_layer.refresh()
         except StopIteration:
             self.viewer.add_shapes(
                 bboxes,
