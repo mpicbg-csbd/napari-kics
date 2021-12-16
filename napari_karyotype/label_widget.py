@@ -79,19 +79,16 @@ class LabelWidget(QVBoxLayout):
     def generate_table(self):
         rp = regionprops(self.label_layer.data + 1)
 
-        res = np.array([(r.label - 1, r.area, r.coords[0]) for r in rp], dtype=object)
+        res = np.array(
+            [(r.label - 1, r.area, r.coords[0], r.bbox) for r in rp],
+            dtype=object,
+        )
         res = np.array(sorted(res, key=lambda x: x[0]))
         # l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
-        l = [("", str(res[ind, 0]), res[ind, 1]) for ind in range(len(res))]
-
-        self.coords = {}
-        for r in rp:
-            self.coords[r.label - 1] = tuple(r.coords[0])
-
-        print(self.coords)
+        l = [("", str(row[0]), row[1], *row[2:]) for row in res]
 
         frame = pd.DataFrame(l)
-        frame.columns = ["color", "label", "area"]
+        frame.columns = ["color", "label", "area", "_coord", "_bbox"]
         self.table.setModel(PandasTableModel(frame, self.label_layer.get_color))
         self.table.sortByColumn(2, Qt.DescendingOrder)
         self.table.setDisabled(False)
@@ -115,30 +112,13 @@ class LabelWidget(QVBoxLayout):
 
     def delete_selected_labels(self, e):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-        # coords = [np.where(self.label_layer.data == label) for label in
-        #           self.table.model().dataframe.index[indices]]
-
-        coords = []
-
-        for label in self.table.model().dataframe.index[indices]:
-            if (
-                label in self.coords.keys()
-                and self.label_layer.data[self.coords[label]] == label
-            ):
-                # print(f"[delete_selected_label]: label found clause")
-                coords.append(self.coords[label])
-            else:
-                # print(f"[delete_selected_label]: label not found clause")
-                # print(f"label is {label}, coords are {self.coords[label]}, value at popsition is {self.label_layer.data[self.coords[label]]}")
-                c = np.argwhere(self.label_layer.data == label)[0]
-                coords.append(c)
-
-        # coords_to_fill = [(co[0], co[1][0]) for co in coords]
+        coords = self.table.model().dataframe.iloc[indices].loc[:, "_coord"]
 
         print(f"[backspace]: removing indices {indices}")
         print(f"[backspace]: coords list is {coords}")
 
-        [self.label_layer.fill(coord, 0) for coord in coords]
+        for coord in coords:
+            self.label_layer.fill(coord, 0)
 
     def update_table(self):
 
