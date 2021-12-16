@@ -1,8 +1,7 @@
 from copy import deepcopy
 
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
-from napari_karyotype.utils import get_img
-from napari_karyotype.guess_chromosome_labels import guess_chromosome_labels
+from napari_karyotype.utils import get_img, guess_chromosome_labels
 from math import hypot
 from skimage.measure import regionprops
 

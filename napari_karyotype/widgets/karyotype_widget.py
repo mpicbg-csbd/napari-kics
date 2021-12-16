@@ -1,13 +1,13 @@
 from PyQt5.QtCore import Qt
 from qtpy.QtWidgets import *
 
-from napari_karyotype.annotation_widget import AnnotationWidget
-from napari_karyotype.blur_widget import BlurWidget
-from napari_karyotype.head_layout import HeadLayout
-from napari_karyotype.order_widget import OrderWidget
-from napari_karyotype.saving_widget import SavingWidget
-from napari_karyotype.label_widget import LabelWidget
-from napari_karyotype.threshold_widget import ThresholdWidget
+from .annotation_widget import AnnotationWidget
+from .blur_widget import BlurWidget
+from .head_layout import HeadLayout
+from .label_widget import LabelWidget
+from .order_widget import OrderWidget
+from .saving_widget import SavingWidget
+from .threshold_widget import ThresholdWidget
 
 
 # main widget

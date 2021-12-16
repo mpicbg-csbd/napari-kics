@@ -11,9 +11,8 @@ import numpy as np
 import pandas as pd
 from skimage.measure import regionprops
 
-from napari_karyotype.utils import get_img
-from napari_karyotype.table_model import PandasTableModel
-from napari_karyotype.label_history_processor import LabelHistoryProcessor
+from napari_karyotype.models.table_model import PandasTableModel
+from napari_karyotype.utils import get_img, LabelHistoryProcessor
 
 
 class LabelWidget(QVBoxLayout):

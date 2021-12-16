@@ -1,25 +1,30 @@
 from skimage import io
 import pandas as pd
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
+from napari_karyotype.widgets import ClickableLineEdit
 from pathlib import Path
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 
 
 class SavingWidget(QVBoxLayout):
-
     def __init__(self, viewer, table):
         super().__init__()
 
         self.viewer = viewer
         self.table = table
 
-        from napari_karyotype.utils import ClickableLineEdit
-        self.save_path_line_edit = ClickableLineEdit(f"{Path(__file__).absolute().parent}/resources/example_output")
+        self.save_path_line_edit = ClickableLineEdit(
+            f"{Path(__file__).absolute().parent}/resources/example_output"
+        )
 
         self.save_btn = QPushButton("Save")
-        self.save_btn.clicked.connect(lambda x: print(f"path is {self.save_path_line_edit.text()}"))
+        self.save_btn.clicked.connect(
+            lambda x: print(f"path is {self.save_path_line_edit.text()}")
+        )
 
-        self.save_btn.clicked.connect(lambda e: self.save_output(self.save_path_line_edit.text()))
+        self.save_btn.clicked.connect(
+            lambda e: self.save_output(self.save_path_line_edit.text())
+        )
 
         self.descr_label = QLabel("6. Save results to the the following directory:")
 
@@ -51,6 +56,8 @@ class SavingWidget(QVBoxLayout):
         res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
         res["labelled"] = self.viewer.layers[names.index("labelled")].data
 
-        res["labelled_color"] = self.viewer.layers[names.index("labelled")].get_color(list(res["labelled"]))
+        res["labelled_color"] = self.viewer.layers[names.index("labelled")].get_color(
+            list(res["labelled"])
+        )
 
         return res
