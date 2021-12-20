@@ -112,15 +112,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # create overlayed scatter plot for matching
         self.matchingPlotItem = pg.ScatterPlotItem(
-            size=10,
+            size=12,
             pen=pg.mkPen(None),
             brush=pg.mkBrush(255, 255, 255, 120),
             hoverable=True,
             hoverPen=pg.mkPen("r", width=2),
             hoverBrush=pg.mkBrush(None),
         )
-        matchingIndices = list(range(len(self.matching)))
-        self.matchingPlotItem.addPoints(pos=self.matching, data=matchingIndices)
+        self.updateMatching()
+        self.matchingPlotItem.sigClicked.connect(
+            lambda _, ps: self.deleteMatchings([p.index() for p in ps])
+        )
+        self.correlationMatrixItem.handleMouseClick = lambda i, j: self.addMatching(
+            i, j
+        )
 
         # display scatter plot
         self.matrixPlotItem.addItem(self.matchingPlotItem)
@@ -128,6 +133,34 @@ class MainWindow(QtWidgets.QMainWindow):
     def keyReleaseEvent(self, e):
         if e.key() == QtCore.Qt.Key.Key_Q:
             self.close()
+
+    def updateMatching(self):
+        self.matchingScore = self.calculateMatchingScore()
+        self.correlationMatrixItem.matchingScore = self.matchingScore
+        matchingIndices = list(range(len(self.matching)))
+        self.matchingPlotItem.setData(pos=self.matching, data=matchingIndices)
+
+    def calculateMatchingScore(self):
+        mask = np.ones(self.correlationMatrix.shape, dtype=bool)
+        mask[self.matching[:, 1], self.matching[:, 0]] = False
+        maskedCorrelationMatrix = self.correlationMatrix.values.copy()
+        maskedCorrelationMatrix[mask] = 0
+        row_sums = np.sum(maskedCorrelationMatrix, axis=1)
+        score = np.sum(np.abs(self.estimates.values - row_sums))
+
+        return score
+
+    def addMatching(self, i, j):
+        if np.any((self.matching[:, 0] == j) & (self.matching[:, 1] == i)):
+            # matching already exists
+            return
+
+        self.matching = np.vstack((self.matching, np.array([j, i])))
+        self.updateMatching()
+
+    def deleteMatchings(self, deletedIndices):
+        self.matching = np.delete(self.matching, deletedIndices, axis=0)
+        self.updateMatching()
 
 
 class CorrelationMatrixItem(pg.ImageItem):
@@ -140,6 +173,21 @@ class CorrelationMatrixItem(pg.ImageItem):
     def setParent(self, parent):
         self.parent = parent
         self.parent.setTitle("")
+
+    def mouseClickEvent(self, ev):
+        if ev.button() == QtCore.Qt.MouseButton.RightButton:
+            if self.raiseContextMenu(ev):
+                ev.accept()
+                return
+
+        if (
+            not self.handleMouseClick is None
+            and ev.button() == QtCore.Qt.MouseButton.LeftButton
+        ):
+            i, j = ev.pos().y(), ev.pos().x()
+            i = int(np.clip(i, 0, self.image.shape[0] - 1))
+            j = int(np.clip(j, 0, self.image.shape[1] - 1))
+            self.handleMouseClick(i, j)
 
     def hoverEvent(self, event):
         """Show the position, pixel, and value under the mouse cursor."""
@@ -158,7 +206,9 @@ class CorrelationMatrixItem(pg.ImageItem):
         chrom = self.chromosomes[i]
         scaff = self.scaffoldNames[j]
 
-        self.parent.setTitle(f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff}")
+        self.parent.setTitle(
+            f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff}  score: {self.matchingScore}"
+        )
 
 
 class LabelAxisItem(pg.AxisItem):
