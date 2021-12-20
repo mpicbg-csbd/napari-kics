@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
 
@@ -26,18 +27,25 @@ class MainWindow(QtWidgets.QMainWindow):
         initialMatching,
         *qtArgs,
         colorMap="magma",
-        **qtKwargs
+        **qtKwargs,
     ):
         super().__init__(*qtArgs, **qtKwargs)
 
         # store data that should be displayed
-        self.estimates = estimates
-        self.scaffoldSizes = scaffoldSizes
+        self.estimates = pd.Series(estimates)
+        self.estimates.name = self.estimates.name or "chromosome_estimates"
+        self.scaffoldSizes = pd.Series(scaffoldSizes)
+        self.scaffoldSizes.name = self.scaffoldSizes.name or "scaffold_sizes"
         # make a copy of the data and swap X and Y axis for plotting
         self.matching = np.fliplr(initialMatching)
         # compute abs. difference as a correlationmeasure
-        self.correlationMatrix = 1 + np.abs(
-            np.atleast_2d(self.estimates).T - self.scaffoldSizes
+        self.correlationMatrix = pd.DataFrame(
+            1
+            + np.abs(
+                np.atleast_2d(self.estimates.values).T - self.scaffoldSizes.values
+            ),
+            index=estimates.index,
+            columns=scaffoldSizes.index,
         )
         # store matrix dimensions for concise access
         self.n, self.m = self.correlationMatrix.shape
@@ -54,7 +62,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def _attachMatrixPlot(self):
-        self.matrixPlotItem = self.centralWidget().addPlot()
+        self.matrixPlotItem = self.centralWidget().addPlot(
+            axisItems={
+                "left": LabelAxisItem("left", self.estimates.index),
+                "right": LabelAxisItem("right", self.estimates.index),
+                "top": LabelAxisItem("top", self.scaffoldSizes.index),
+                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index),
+            }
+        )
         # orient y axis to run top-to-bottom
         self.matrixPlotItem.invertY(True)
         # remove data padding
@@ -63,14 +78,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matrixPlotItem.showAxes(
             True, showValues=(True, True, False, False), size=20
         )
-        # define major tick marks and labels:
-        # ticks = [(idx, label) for idx, label in enumerate(columns)]
-        # for side in ("left", "top", "right", "bottom"):
-        #     self.matrixPlotItem.getAxis(side).setTicks(
-        #         (ticks, [])
-        #     )  # add list of major ticks; no minor ticks
-        # include some additional space at bottom of figure
-        # self.matrixPlotItem.getAxis("bottom").setHeight(10)
 
         # set locked aspect ratio of 1
         centralViewBox = self.matrixPlotItem.getViewBox()
@@ -82,9 +89,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # prepare transform to center the corner element on the origin, for any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
-        self.correlationMatrixItem = CorrelationMatrixItem()
+        self.correlationMatrixItem = CorrelationMatrixItem(
+            self.estimates.index, self.scaffoldSizes.index
+        )
         self.correlationMatrixItem.setTransform(alignPixelTransform)
-        self.correlationMatrixItem.setImage(self.correlationMatrix)
+        self.correlationMatrixItem.setImage(self.correlationMatrix.values)
 
         # display plot
         self.matrixPlotItem.addItem(self.correlationMatrixItem)
@@ -93,7 +102,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # generate an adjustabled color bar, initially spanning min to max data value
         bar = pg.ColorBarItem(
-            values=(np.min(self.correlationMatrix), np.max(self.correlationMatrix)),
+            values=(
+                np.min(self.correlationMatrix.values),
+                np.max(self.correlationMatrix.values),
+            ),
             colorMap=self.colorMap,
         )
         bar.setImageItem(self.correlationMatrixItem, insert_in=self.matrixPlotItem)
@@ -110,6 +122,7 @@ class MainWindow(QtWidgets.QMainWindow):
         matchingIndices = list(range(len(self.matching)))
         self.matchingPlotItem.addPoints(pos=self.matching, data=matchingIndices)
 
+        # display scatter plot
         self.matrixPlotItem.addItem(self.matchingPlotItem)
 
     def keyReleaseEvent(self, e):
@@ -118,6 +131,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 class CorrelationMatrixItem(pg.ImageItem):
+    def __init__(self, chromosomes, scaffoldNames, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.chromosomes = chromosomes
+        self.scaffoldNames = scaffoldNames
+
     def setParent(self, parent):
         self.parent = parent
         self.parent.setTitle("")
@@ -135,9 +154,29 @@ class CorrelationMatrixItem(pg.ImageItem):
         i, j = pos.y(), pos.x()
         i = int(np.clip(i, 0, self.image.shape[0] - 1))
         j = int(np.clip(j, 0, self.image.shape[1] - 1))
-        val = self.image[i, j]
-        ppos = self.mapToParent(pos)
-        x, y = ppos.x(), ppos.y()
-        self.parent.setTitle(
-            "pos: (%0.1f, %0.1f)  pixel: (%d, %d)  value: %.3g" % (x, y, i, j, val)
-        )
+        absdiff = self.image[i, j]
+        chrom = self.chromosomes[i]
+        scaff = self.scaffoldNames[j]
+
+        self.parent.setTitle(f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff}")
+
+
+class LabelAxisItem(pg.AxisItem):
+    def __init__(self, orientation, labels, *args, **kwargs):
+        super().__init__(orientation, *args, **kwargs)
+        self.labels = labels
+
+    def tickStrings(self, values, scale, spacing):
+        """Return the strings that should be placed next to ticks."""
+        if self.logMode:
+            return self.logTickStrings(values, scale, spacing)
+
+        def value2str(v):
+            idx = int(v * scale)
+
+            if 0 <= idx and idx <= len(self.labels):
+                return str(self.labels[idx])
+            else:
+                return ""
+
+        return [value2str(v) for v in values]

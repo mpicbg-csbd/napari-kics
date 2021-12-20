@@ -6,13 +6,21 @@ import pdb  # pylint: disable=unused-import
 import sys
 from pulp import GLPK, LpMaximize, LpMinimize, LpProblem, LpStatus, LpVariable
 import numpy as np
+import pandas as pd
 from importlib import import_module
+
+from logging import basicConfig, getLogger
+
+log = getLogger(__name__)
 
 
 module_fqn = "napari_karyotype.analysis_plots"
 
 
 def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
+    estimates = pd.Series(estimates).values
+    scaffs = pd.Series(scaffs).values
+
     n, m = len(estimates), len(scaffs)
     # Absolute value of difference between each pair of estimate and scaffold
     # estimates = np.log(estimates) / np.log(unmatched_penalty)
@@ -54,12 +62,10 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
 def analysis_plots(
     scaffold_sizes, estimates, *, max_deviation=30e6, plotlib="pyqtgraph"
 ):
-    # sort in descending order
-    estimates.sort()
-    estimates = np.flip(estimates)
-    # sort in descending order
-    scaffold_sizes.sort()
-    scaffold_sizes = np.flip(scaffold_sizes)
+    scaffold_sizes = pd.Series(scaffold_sizes)
+    scaffold_sizes.sort_values(ascending=False, inplace=True)
+    estimates = pd.Series(estimates)
+    estimates.sort_values(ascending=False, inplace=True)
 
     # matching = []
     matching = find_optimal_assignment(estimates, scaffold_sizes, unmatched_penalty=2.0)
@@ -79,16 +85,52 @@ def main():
     args = _parse_args()
 
     if args.scaffold_sizes.name.endswith(".fai"):
-        scaffold_names = [line.split("\t")[0] for line in args.scaffold_sizes]
-        args.scaffold_sizes.seek(0)
-        scaffold_sizes = np.loadtxt(
-            args.scaffold_sizes, usecols=(1,), dtype=np.int_, delimiter="\t"
+        scaffold_sizes = pd.read_table(
+            args.scaffold_sizes,
+            header=None,
+            index_col=0,
+            names=("scaffold", "size"),
+            usecols=(0, 1),
         )
+        scaffold_sizes = scaffold_sizes.loc[:, "size"]
+        scaffold_sizes.name = "scaffold_sizes"
     else:
-        scaffold_names = [str(i) for i in range(len(args.scaffold_sizes))]
-        scaffold_sizes = np.loadtxt(args.scaffold_sizes, dtype=np.int_)
+        scaffold_sizes = pd.read_table(args.scaffold_sizes, header=None)
 
-    estimates = np.loadtxt(args.estimates, dtype=np.int_)
+        if scaffold_sizes.shape[1] == 1:
+            # no scaffold names provided
+            scaffold_sizes = scaffold_sizes.loc[:, 0]
+            scaffold_sizes.name = "scaffold_sizes"
+        elif scaffold_sizes.shape[1] >= 2:
+            # scaffold names in first column
+            scaffold_sizes = pd.Series(
+                scaffold_sizes.iloc[1],
+                name="scaffold_sizes",
+                index=scaffold_sizes.iloc[0],
+            )
+
+            if scaffold_sizes.shape[1] > 2:
+                log.warning(f"ignoring additional columns in {scaffold_sizes.name}")
+        else:
+            raise Exception(f"empty scaffold sizes: {scaffold_sizes.name}")
+
+    estimates = pd.read_table(args.estimates, header=None)
+    if estimates.shape[1] == 1:
+        # no chromsome names provided
+        estimates = estimates.loc[:, 0]
+        estimates.name = "chromosome_estimates"
+    elif estimates.shape[1] >= 2:
+        # chromsome names in first column
+        estimates = pd.Series(
+            estimates.iloc[1],
+            name="chromosome_estimates",
+            index=estimates.iloc[0],
+        )
+
+        if estimates.shape[1] > 2:
+            log.warning(f"ignoring additional columns in {estimates.name}")
+    else:
+        raise Exception(f"empty estimates: {estimates.name}")
 
     analysis_plots(
         scaffold_sizes,
