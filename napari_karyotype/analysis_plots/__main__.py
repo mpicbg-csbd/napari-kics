@@ -85,52 +85,11 @@ def main():
     args = _parse_args()
 
     if args.scaffold_sizes.name.endswith(".fai"):
-        scaffold_sizes = pd.read_table(
-            args.scaffold_sizes,
-            header=None,
-            index_col=0,
-            names=("scaffold", "size"),
-            usecols=(0, 1),
-        )
-        scaffold_sizes = scaffold_sizes.loc[:, "size"]
-        scaffold_sizes.name = "scaffold_sizes"
+        scaffold_sizes = _read_fasta_index(args.scaffold_sizes)
     else:
-        scaffold_sizes = pd.read_table(args.scaffold_sizes, header=None)
+        scaffold_sizes = _read_tsv_data(args.scaffold_sizes, name="scaffold_sizes")
 
-        if scaffold_sizes.shape[1] == 1:
-            # no scaffold names provided
-            scaffold_sizes = scaffold_sizes.loc[:, 0]
-            scaffold_sizes.name = "scaffold_sizes"
-        elif scaffold_sizes.shape[1] >= 2:
-            # scaffold names in first column
-            scaffold_sizes = pd.Series(
-                scaffold_sizes.iloc[1],
-                name="scaffold_sizes",
-                index=scaffold_sizes.iloc[0],
-            )
-
-            if scaffold_sizes.shape[1] > 2:
-                log.warning(f"ignoring additional columns in {scaffold_sizes.name}")
-        else:
-            raise Exception(f"empty scaffold sizes: {scaffold_sizes.name}")
-
-    estimates = pd.read_table(args.estimates, header=None)
-    if estimates.shape[1] == 1:
-        # no chromsome names provided
-        estimates = estimates.loc[:, 0]
-        estimates.name = "chromosome_estimates"
-    elif estimates.shape[1] >= 2:
-        # chromsome names in first column
-        estimates = pd.Series(
-            estimates.iloc[1],
-            name="chromosome_estimates",
-            index=estimates.iloc[0],
-        )
-
-        if estimates.shape[1] > 2:
-            log.warning(f"ignoring additional columns in {estimates.name}")
-    else:
-        raise Exception(f"empty estimates: {estimates.name}")
+    estimates = _read_tsv_data(args.estimates, "chromosome_estimates")
 
     analysis_plots(
         scaffold_sizes,
@@ -180,6 +139,43 @@ def _parse_args(args=sys.argv[1:]):
     )
 
     return parser.parse_args(args)
+
+
+def _read_fasta_index(fai_file):
+    fai = pd.read_table(
+        fai_file,
+        header=None,
+        index_col=0,
+        names=("scaffold", "size"),
+        usecols=(0, 1),
+    )
+    fai = fai.loc[:, "size"]
+    fai.name = "scaffold_sizes"
+
+    return fai
+
+
+def _read_tsv_data(tsv_file, name=None):
+    tsv = pd.read_table(tsv_file, header=None)
+
+    if tsv.shape[1] == 1:
+        # no names provided
+        tsv = tsv.loc[:, 0]
+        tsv.name = name
+    elif tsv.shape[1] >= 2:
+        if tsv.shape[1] > 2:
+            log.warning(f"ignoring additional columns in {tsv_file.name}")
+
+        # names in first column, sizes in second column
+        tsv = pd.Series(
+            tsv.iloc[:, 1].values,
+            index=tsv.iloc[:, 0],
+            name=name,
+        )
+    else:
+        raise Exception(f"empty file: {tsv_file.name}")
+
+    return tsv
 
 
 if __name__ == "__main__":
