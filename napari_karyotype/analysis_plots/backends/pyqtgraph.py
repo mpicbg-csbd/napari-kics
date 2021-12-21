@@ -298,8 +298,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # create overlayed scatter plot for matching
         self.matchingPlotItem = pg.ScatterPlotItem(
             size=12,
-            pen=pg.mkPen(None),
-            brush=pg.mkBrush(255, 255, 255, 120),
+            pen=pg.mkPen(color="#55555588", width=1),
+            brush=pg.mkBrush("#ffffff88"),
             hoverable=True,
             hoverPen=pg.mkPen("r", width=2),
             hoverBrush=pg.mkBrush(None),
