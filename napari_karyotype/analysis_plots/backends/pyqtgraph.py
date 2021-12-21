@@ -58,7 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # setup window appearance
         self.setWindowTitle("Chromosome size estimation: analysis plots")
-        self.resize(600, 500)
+        self.resize(20 * self.m, 20 * self.n)
         self.setCentralWidget(pg.GraphicsLayoutWidget(show=True))
 
         self._attachMatrixPlot()
