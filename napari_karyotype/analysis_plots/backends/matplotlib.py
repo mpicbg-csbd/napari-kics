@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from logging import basicConfig, getLogger
+
 log = getLogger(__name__)
 
 
@@ -10,6 +12,9 @@ def do_plot(estimates, scaffold_sizes, matching, **kwargs):
     log.warning("this backend is currently not maintained")
 
     matplotlib.use("qt5agg")
+
+    estimates = pd.Series(estimates).values
+    scaffold_sizes = pd.Series(scaffold_sizes).values
 
     fig = plt.figure(constrained_layout=False)
 
@@ -34,13 +39,15 @@ def do_plot(estimates, scaffold_sizes, matching, **kwargs):
     matrix_ax.set_ylabel("estimates")
 
     if len(matching) > 0:
-        pairs_ax.scatter(
-            range(estimates.shape[0]), estimates, marker="_", label="estimates"
+        bar_width = 0.35
+        chr_locations = np.arange(estimates.shape[0])
+        pairs_ax.bar(
+            chr_locations - bar_width / 2, estimates, bar_width, label="estimates"
         )
-        pairs_ax.scatter(
-            matching[:, 0],
+        pairs_ax.bar(
+            matching[:, 0] + bar_width / 2,
             scaffold_sizes[matching[:, 1]],
-            marker=".",
+            bar_width,
             label="scaffold_sizes",
         )
         if False:
