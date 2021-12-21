@@ -81,7 +81,53 @@ class MainWindow(QtWidgets.QMainWindow):
         self._prepareColorBarItem()
         self._populateColorBarItem()
 
+        self._addMatrixCrosshair()
+
         self.updateMatching()
+
+    def _addMatrixCrosshair(self):
+        self.__signalProxies = list()
+        self.__matrixCrosshairHLines = list()
+        self.__matrixCrosshairVLines = list()
+
+        def handleMouseMove(plotItem, *, moveX=True, moveY=True):
+            if moveY:
+                # create horizontal part of crosshair
+                hLine = pg.InfiniteLine(
+                    angle=0, movable=False, pen={"color": "#555555ff", "width": 2}
+                )
+                plotItem.addItem(hLine, ignoreBounds=True)
+                self.__matrixCrosshairHLines.append(hLine)
+
+            if moveX:
+                # create vertical part of crosshair
+                vLine = pg.InfiniteLine(
+                    angle=90, movable=False, pen={"color": "#555555ff", "width": 2}
+                )
+                plotItem.addItem(vLine, ignoreBounds=True)
+                self.__matrixCrosshairVLines.append(vLine)
+
+            def mouseMoved(args):
+                # using signal proxy turns original arguments into a tuple
+                pos = args[0]
+
+                if plotItem.sceneBoundingRect().contains(pos):
+                    mousePoint = plotItem.vb.mapSceneToView(pos)
+                    if moveY:
+                        for hLine in self.__matrixCrosshairHLines:
+                            hLine.setPos(mousePoint.y())
+                    if moveX:
+                        for vLine in self.__matrixCrosshairVLines:
+                            vLine.setPos(mousePoint.x())
+
+            proxy = pg.SignalProxy(
+                plotItem.scene().sigMouseMoved, rateLimit=60, slot=mouseMoved
+            )
+            self.__signalProxies.append(proxy)
+
+        handleMouseMove(self.selectionPerScaffoldPlotItem, moveY=False)
+        handleMouseMove(self.correlationPerChromosomePlotItem, moveX=False)
+        handleMouseMove(self.matrixPlotItem)
 
     def _prepareTotalCorrelationItem(self):
         self.totalCorrelationPlotItem = self.centralWidget().addPlot(
