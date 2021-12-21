@@ -64,6 +64,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def _attachMatrixPlot(self):
+        self._prepareSelectionPerScaffoldItem()
+        self._populateSelectionPerScaffoldItem()
+
         self._prepareCorrelationPerChromosomeItem()
         self._populateCorrelationPerChromosomeItem()
 
@@ -75,9 +78,51 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.updateMatching()
 
+    def _prepareSelectionPerScaffoldItem(self):
+        self.selectionPerScaffoldPlotItem = self.centralWidget().addPlot(
+            row=0,
+            col=1,
+            name="selectionPerScaffold",
+            axisItems={
+                "left": LabelAxisItem("left", self.estimates.index),
+                "right": LabelAxisItem("right", self.estimates.index),
+                "top": LabelAxisItem("top", self.scaffoldSizes.index),
+                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index),
+            },
+            enableMenu=False,
+        )
+        # disable mouse interaction
+        self.selectionPerScaffoldPlotItem.vb.setMouseEnabled(x=False, y=False)
+        self.selectionPerScaffoldPlotItem.hideButtons()
+        # remove data padding
+        self.selectionPerScaffoldPlotItem.setDefaultPadding(0.0)
+        # show full frame, label tick marks at top side, with some extra space for labels
+        self.selectionPerScaffoldPlotItem.showAxes(
+            True, showValues=(False, True, False, False), size=20
+        )
+        self.selectionPerScaffoldPlotItem.setXLink("matrix")
+        self.selectionPerScaffoldPlotItem.setLimits(yMin=-0.5, yMax=0.5)
+        self.selectionPerScaffoldPlotItem.setFixedHeight(60)
+
+    def _populateSelectionPerScaffoldItem(self):
+        # prepare transform to center the corner element on the origin, for any assigned image
+        alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
+
+        self.selectionPerScaffoldItem = pg.ImageItem()
+        self.selectionPerScaffoldItem.setTransform(alignPixelTransform)
+        cm = pg.ColorMap([0.0, 0.5, 1.0], ["black", "white", "red"])
+        self.selectionPerScaffoldItem.setLookupTable(cm.getLookupTable(nPts=3))
+
+        # display plot
+        self.selectionPerScaffoldPlotItem.addItem(self.selectionPerScaffoldItem)
+        self.selectionPerScaffoldPlotItem.autoRange()
+
+        # Update plot if the matching changes
+        self.sigMatchingChanged.connect(self.updateSelectionPerScaffoldItem)
+
     def _prepareCorrelationPerChromosomeItem(self):
         self.correlationPerChromosomePlotItem = self.centralWidget().addPlot(
-            row=0,
+            row=1,
             col=0,
             name="correlationPerChromosome",
             axisItems={
@@ -90,6 +135,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         # disable mouse interaction
         self.correlationPerChromosomePlotItem.vb.setMouseEnabled(x=False, y=False)
+        self.correlationPerChromosomePlotItem.hideButtons()
         # orient y axis to run top-to-bottom
         self.correlationPerChromosomePlotItem.invertY(True)
         # remove data padding
@@ -109,24 +155,25 @@ class MainWindow(QtWidgets.QMainWindow):
         self.correlationPerChromosomeItem = pg.ImageItem()
         self.correlationPerChromosomeItem.setTransform(alignPixelTransform)
 
-        # make sure self.correlationPerChromosome is set correctly
-        self.udpateMatchingScore()
-        dataView = self.correlationPerChromosome.view()
-        dataView.shape = (-1, 1)
-        self.correlationPerChromosomeItem.setImage(dataView)
+        # The following will be
+        # self.correlationPerChromosomeItem.setImage(self.correlationPerChromosome.reshape(-1, 1))
 
         # display plot
         self.correlationPerChromosomePlotItem.addItem(self.correlationPerChromosomeItem)
         self.correlationPerChromosomePlotItem.autoRange()
 
+        # Update plot if the matching changes
+        self.sigMatchingChanged.connect(self.updateCorrelationPerChromosomeItem)
+
     def _prepareMatrixPlotItem(self):
-        self.matrixPlotItem = self.centralWidget().addPlot(row=0, col=1, name="matrix")
+        self.matrixPlotItem = self.centralWidget().addPlot(row=1, col=1, name="matrix")
         # orient y axis to run top-to-bottom
         self.matrixPlotItem.invertY(True)
         # remove data padding
         self.matrixPlotItem.setDefaultPadding(0.0)
         # show full frame, label tick marks at top side, with some extra space for labels
         self.matrixPlotItem.showAxes(True, showValues=False)
+        self.matrixPlotItem.setXLink("selectionPerScaffold")
         self.matrixPlotItem.setYLink("correlationPerChromosome")
         # set locked aspect ratio of 1
         self.matrixPlotItem.setAspectLocked()
@@ -172,7 +219,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matrixPlotItem.addItem(self.matchingPlotItem)
 
     def _prepareColorBarItem(self):
-        self.colorBarPlotItem = self.centralWidget().addPlot(row=0, col=2)
+        self.colorBarPlotItem = self.centralWidget().addPlot(row=1, col=2)
         self.colorBarPlotItem.showAxes(False)
         self.colorBarPlotItem.setFixedWidth(120)
 
@@ -192,14 +239,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # add space for axis labels
         self.colorBarItem.getAxis("right").setWidth(80)
 
-        self.sigMatchingChanged.connect(self.updateCorrelationPerChromosomeItem)
-
     def keyReleaseEvent(self, e):
         if e.key() == QtCore.Qt.Key.Key_Q:
             self.close()
 
     def updateMatching(self):
         self.udpateMatchingScore()
+        self.udpateScaffoldSelection()
         self.sigMatchingChanged.emit(self)
 
     def udpateMatchingScore(self):
@@ -214,6 +260,12 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.correlationPerChromosome = np.abs(self.estimates.values - rowSums)
         self.matchingScore = np.sum(self.correlationPerChromosome)
+
+    def udpateScaffoldSelection(self):
+        self.scaffoldSelection = np.zeros((1, self.m), dtype=int)
+
+        for scaffIdx in self.matching[:, 0]:
+            self.scaffoldSelection[0, scaffIdx] += 1
 
     def addMatching(self, i, j):
         if np.any((self.matching[:, 0] == j) & (self.matching[:, 1] == i)):
@@ -243,6 +295,10 @@ class MainWindow(QtWidgets.QMainWindow):
         if hasattr(self, "colorBarItem"):
             # trigger update of coloring
             self.colorBarItem.setLevels()
+
+    def updateSelectionPerScaffoldItem(self):
+        # update selection per scaffold plot
+        self.selectionPerScaffoldItem.setImage(self.scaffoldSelection, levels=[0, 2])
 
 
 class CorrelationMatrixItem(pg.ImageItem):
