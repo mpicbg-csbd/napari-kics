@@ -20,6 +20,8 @@ def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
 class MainWindow(QtWidgets.QMainWindow):
     """Main window for analysis plots."""
 
+    sigMatchingChanged = QtCore.Signal(object)
+
     def __init__(
         self,
         estimates,
@@ -62,30 +64,74 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
 
     def _attachMatrixPlot(self):
-        self.matrixPlotItem = self.centralWidget().addPlot(
+        self._prepareCorrelationPerChromosomeItem()
+        self._populateCorrelationPerChromosomeItem()
+
+        self._prepareMatrixPlotItem()
+        self._populateMatrixPlotItem()
+
+        self._prepareColorBarItem()
+        self._populateColorBarItem()
+
+        self.updateMatching()
+
+    def _prepareCorrelationPerChromosomeItem(self):
+        self.correlationPerChromosomePlotItem = self.centralWidget().addPlot(
+            row=0,
+            col=0,
+            name="correlationPerChromosome",
             axisItems={
                 "left": LabelAxisItem("left", self.estimates.index),
                 "right": LabelAxisItem("right", self.estimates.index),
                 "top": LabelAxisItem("top", self.scaffoldSizes.index),
                 "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index),
-            }
+            },
+            enableMenu=False,
         )
+        # disable mouse interaction
+        self.correlationPerChromosomePlotItem.vb.setMouseEnabled(x=False, y=False)
+        # orient y axis to run top-to-bottom
+        self.correlationPerChromosomePlotItem.invertY(True)
+        # remove data padding
+        self.correlationPerChromosomePlotItem.setDefaultPadding(0.0)
+        # show full frame, label tick marks at left side, with some extra space for labels
+        self.correlationPerChromosomePlotItem.showAxes(
+            True, showValues=(True, False, False, False), size=40
+        )
+        self.correlationPerChromosomePlotItem.setYLink("matrix")
+        self.correlationPerChromosomePlotItem.setLimits(xMin=-0.5, xMax=0.5)
+        self.correlationPerChromosomePlotItem.setFixedWidth(80)
+
+    def _populateCorrelationPerChromosomeItem(self):
+        # prepare transform to center the corner element on the origin, for any assigned image
+        alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
+
+        self.correlationPerChromosomeItem = pg.ImageItem()
+        self.correlationPerChromosomeItem.setTransform(alignPixelTransform)
+
+        # make sure self.correlationPerChromosome is set correctly
+        self.udpateMatchingScore()
+        dataView = self.correlationPerChromosome.view()
+        dataView.shape = (-1, 1)
+        self.correlationPerChromosomeItem.setImage(dataView)
+
+        # display plot
+        self.correlationPerChromosomePlotItem.addItem(self.correlationPerChromosomeItem)
+        self.correlationPerChromosomePlotItem.autoRange()
+
+    def _prepareMatrixPlotItem(self):
+        self.matrixPlotItem = self.centralWidget().addPlot(row=0, col=1, name="matrix")
         # orient y axis to run top-to-bottom
         self.matrixPlotItem.invertY(True)
         # remove data padding
         self.matrixPlotItem.setDefaultPadding(0.0)
-        # show full frame, label tick marks at top and left sides, with some extra space for labels
-        self.matrixPlotItem.showAxes(
-            True, showValues=(True, True, False, False), size=20
-        )
-
+        # show full frame, label tick marks at top side, with some extra space for labels
+        self.matrixPlotItem.showAxes(True, showValues=False)
+        self.matrixPlotItem.setYLink("correlationPerChromosome")
         # set locked aspect ratio of 1
-        centralViewBox = self.matrixPlotItem.getViewBox()
-        centralViewBox.setAspectLocked()
+        self.matrixPlotItem.setAspectLocked()
 
-        self._attachCorrelationMatrixItem()
-
-    def _attachCorrelationMatrixItem(self):
+    def _populateMatrixPlotItem(self):
         # prepare transform to center the corner element on the origin, for any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
@@ -98,17 +144,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # display plot
         self.matrixPlotItem.addItem(self.correlationMatrixItem)
         # set parent widget for displaying information
-        self.correlationMatrixItem.setParent(self.matrixPlotItem)
-
-        # generate an adjustabled color bar, initially spanning min to max data value
-        bar = pg.ColorBarItem(
-            values=(
-                np.min(self.correlationMatrix.values),
-                np.max(self.correlationMatrix.values),
-            ),
-            colorMap=self.colorMap,
-        )
-        bar.setImageItem(self.correlationMatrixItem, insert_in=self.matrixPlotItem)
+        # self.correlationMatrixItem.setStatusItem(self.matrixPlotItem)
 
         # create overlayed scatter plot for matching
         self.matchingPlotItem = pg.ScatterPlotItem(
@@ -119,7 +155,12 @@ class MainWindow(QtWidgets.QMainWindow):
             hoverPen=pg.mkPen("r", width=2),
             hoverBrush=pg.mkBrush(None),
         )
-        self.updateMatching()
+
+        # setup data change handlers
+        self.sigMatchingChanged.connect(self.updateMatchingScore)
+        self.sigMatchingChanged.connect(self.updateMatchingPlotItem)
+
+        # setup click handlers
         self.matchingPlotItem.sigClicked.connect(
             lambda _, ps: self.deleteMatchings([p.index() for p in ps])
         )
@@ -130,25 +171,49 @@ class MainWindow(QtWidgets.QMainWindow):
         # display scatter plot
         self.matrixPlotItem.addItem(self.matchingPlotItem)
 
+    def _prepareColorBarItem(self):
+        self.colorBarPlotItem = self.centralWidget().addPlot(row=0, col=2)
+        self.colorBarPlotItem.showAxes(False)
+        self.colorBarPlotItem.setFixedWidth(120)
+
+    def _populateColorBarItem(self):
+        # generate an adjustabled color bar, initially spanning min to max data value
+        self.colorBarItem = pg.ColorBarItem(
+            values=(
+                np.min(self.correlationMatrix.values),
+                np.max(self.correlationMatrix.values),
+            ),
+            colorMap=self.colorMap,
+        )
+        self.colorBarItem.setImageItem(
+            [self.correlationMatrixItem, self.correlationPerChromosomeItem],
+            insert_in=self.colorBarPlotItem,
+        )
+        # add space for axis labels
+        self.colorBarItem.getAxis("right").setWidth(80)
+
+        self.sigMatchingChanged.connect(self.updateCorrelationPerChromosomeItem)
+
     def keyReleaseEvent(self, e):
         if e.key() == QtCore.Qt.Key.Key_Q:
             self.close()
 
     def updateMatching(self):
-        self.matchingScore = self.calculateMatchingScore()
-        self.correlationMatrixItem.matchingScore = self.matchingScore
-        matchingIndices = list(range(len(self.matching)))
-        self.matchingPlotItem.setData(pos=self.matching, data=matchingIndices)
+        self.udpateMatchingScore()
+        self.sigMatchingChanged.emit(self)
 
-    def calculateMatchingScore(self):
+    def udpateMatchingScore(self):
         mask = np.ones(self.correlationMatrix.shape, dtype=bool)
         mask[self.matching[:, 1], self.matching[:, 0]] = False
-        maskedCorrelationMatrix = self.correlationMatrix.values.copy()
-        maskedCorrelationMatrix[mask] = 0
-        row_sums = np.sum(maskedCorrelationMatrix, axis=1)
-        score = np.sum(np.abs(self.estimates.values - row_sums))
+        selectedScaffoldSizes = (
+            np.zeros_like(self.scaffoldSizes.values, shape=(self.n, 1))
+            + self.scaffoldSizes.values
+        )
+        selectedScaffoldSizes[mask] = 0
+        rowSums = np.sum(selectedScaffoldSizes, axis=1)
 
-        return score
+        self.correlationPerChromosome = np.abs(self.estimates.values - rowSums)
+        self.matchingScore = np.sum(self.correlationPerChromosome)
 
     def addMatching(self, i, j):
         if np.any((self.matching[:, 0] == j) & (self.matching[:, 1] == i)):
@@ -162,6 +227,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matching = np.delete(self.matching, deletedIndices, axis=0)
         self.updateMatching()
 
+    def updateMatchingScore(self):
+        self.correlationMatrixItem.matchingScore = self.matchingScore
+
+    def updateMatchingPlotItem(self):
+        matchingIndices = list(range(len(self.matching)))
+        self.matchingPlotItem.setData(pos=self.matching, data=matchingIndices)
+
+    def updateCorrelationPerChromosomeItem(self):
+        # update correlation per chromsome plot
+        self.correlationPerChromosomeItem.setImage(
+            self.correlationPerChromosome.reshape(-1, 1)
+        )
+
+        if hasattr(self, "colorBarItem"):
+            # trigger update of coloring
+            self.colorBarItem.setLevels()
+
 
 class CorrelationMatrixItem(pg.ImageItem):
     def __init__(self, chromosomes, scaffoldNames, *args, **kwargs):
@@ -169,10 +251,11 @@ class CorrelationMatrixItem(pg.ImageItem):
 
         self.chromosomes = chromosomes
         self.scaffoldNames = scaffoldNames
+        self.statusItem = None
 
-    def setParent(self, parent):
-        self.parent = parent
-        self.parent.setTitle("")
+    def setStatusItem(self, statusItem):
+        self.statusItem = statusItem
+        self.statusItem.setTitle("")
 
     def mouseClickEvent(self, ev):
         if ev.button() == QtCore.Qt.MouseButton.RightButton:
@@ -191,11 +274,12 @@ class CorrelationMatrixItem(pg.ImageItem):
 
     def hoverEvent(self, event):
         """Show the position, pixel, and value under the mouse cursor."""
-        if self.parent is None:
+        if not self.statusItem:
             return
 
         if event.isExit():
-            self.parent.setTitle("")
+            if self.statusItem:
+                self.statusItem.setTitle("")
             return
 
         pos = event.pos()
@@ -206,7 +290,7 @@ class CorrelationMatrixItem(pg.ImageItem):
         chrom = self.chromosomes[i]
         scaff = self.scaffoldNames[j]
 
-        self.parent.setTitle(
+        self.statusItem.setTitle(
             f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff}  score: {self.matchingScore}"
         )
 
