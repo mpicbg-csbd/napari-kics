@@ -71,7 +71,7 @@ def analysis_plots(
     matching = find_optimal_assignment(estimates, scaffold_sizes, unmatched_penalty=2.0)
 
     if "." in plotlib:
-        raise ValueError("plotlib must not contains dots ('.')")
+        raise ValueError("plotlib must not contain dots ('.')")
 
     try:
         plot_backend = import_module(f".backends.{plotlib}", package=module_fqn)
