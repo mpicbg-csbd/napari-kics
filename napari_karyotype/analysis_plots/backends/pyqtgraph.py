@@ -221,7 +221,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # display plot
         self.correlationPerChromosomePlotItem.addItem(self.correlationPerChromosomeItem)
-        self.correlationPerChromosomePlotItem.autoRange()
 
         # Update plot if the matching changes
         self.sigMatchingChanged.connect(self.updateCorrelationPerChromosomeItem)
@@ -251,8 +250,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # display plot
         self.matrixPlotItem.addItem(self.correlationMatrixItem)
-        # set parent widget for displaying information
-        # self.correlationMatrixItem.setStatusItem(self.matrixPlotItem)
 
         # create overlayed scatter plot for matching
         self.matchingPlotItem = pg.ScatterPlotItem(
