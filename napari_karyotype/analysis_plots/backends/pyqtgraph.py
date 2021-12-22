@@ -53,11 +53,12 @@ class MainWindow(QtWidgets.QMainWindow):
         self.colorMap = pg.colormap.get(colorMap)
         self.colorMap.reverse()
         self.matrixBorderSize = (60, 80)
+        self.barWidth = 0.3
         self.trSuperDigits = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
 
         # setup window appearance
         self.setWindowTitle("Chromosome size estimation: analysis plots")
-        self.resize(20 * self.m, 20 * self.n)
+        self.resize(20 * self.m, 40 * self.n)
         self.setCentralWidget(pg.GraphicsLayoutWidget(show=True))
 
         self._attachMatrixPlot()
@@ -81,6 +82,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self._populateColorBarItem()
 
         self._addMatrixCrosshair()
+
+        self._prepareDirectComparisonItem()
+        self._populateDirectComparisonItem()
 
         self.updateMatching()
 
@@ -344,6 +348,49 @@ class MainWindow(QtWidgets.QMainWindow):
         handleMouseMove(self.correlationPerChromosomePlotItem, moveX=False)
         handleMouseMove(self.matrixPlotItem)
 
+    def _prepareDirectComparisonItem(self):
+        self.directComparisonPlotItem = self.centralWidget().addPlot(
+            row=2,
+            col=0,
+            colspan=3,
+            name="directComparison",
+            axisItems={
+                "left": pg.AxisItem("left"),
+                "right": pg.AxisItem("right"),
+                "top": LabelAxisItem("top", self.estimates.index),
+                "bottom": LabelAxisItem("bottom", self.estimates.index),
+            },
+        )
+        # show full frame, label tick marks at bottom side, with some extra space for labels
+        self.directComparisonPlotItem.showAxes(
+            True, showValues=(True, False, False, True)
+        )
+        self.directComparisonPlotItem.setLogMode(y=True)
+        self.directComparisonPlotItem.showGrid(y=True)
+
+    def _populateDirectComparisonItem(self):
+        self.chrIndices = np.arange(len(self.estimates))
+
+        self.chromsomeBarsItem = pg.BarGraphItem(
+            x=self.chrIndices - self.barWidth / 2,
+            height=np.log10(self.estimates),
+            width=self.barWidth,
+            brush="#66666688",
+        )
+        self.scaffoldBarsItem = pg.BarGraphItem(
+            x=[],
+            height=[],
+            width=self.barWidth,
+            brush="#FFFFFF88",
+        )
+
+        # display bars
+        self.directComparisonPlotItem.addItem(self.chromsomeBarsItem)
+        self.directComparisonPlotItem.addItem(self.scaffoldBarsItem)
+
+        # Update indicator and text if the matching changes
+        self.sigMatchingChanged.connect(self.updateScaffoldBarsItem)
+
     def keyReleaseEvent(self, e):
         """Handle key release events for the window"""
         if e.key() == QtCore.Qt.Key.Key_Q:
@@ -361,15 +408,15 @@ class MainWindow(QtWidgets.QMainWindow):
             np.zeros((self.n, 1), dtype=np.float_) + self.scaffoldSizes.values
         )
         selectedScaffoldSizes[unselectedMask] = 0
-        joinedScaffoldLengths = np.sum(selectedScaffoldSizes, axis=1)
-        unassignedChromMask = joinedScaffoldLengths < 1
+        self.joinedScaffoldLengths = np.sum(selectedScaffoldSizes, axis=1)
+        self.assignedChromosomesMask = self.joinedScaffoldLengths >= 1
 
         self.correlationPerChromosome = size_correlation(
-            self.estimates.values, joinedScaffoldLengths
+            self.estimates.values, self.joinedScaffoldLengths
         )
-        self.correlationPerChromosome[unassignedChromMask] = np.inf
+        self.correlationPerChromosome[~self.assignedChromosomesMask] = np.inf
         self.totalCorrelation = np.mean(
-            self.correlationPerChromosome[~unassignedChromMask]
+            self.correlationPerChromosome[self.assignedChromosomesMask]
         )
 
     def _updateScaffoldSelection(self):
@@ -424,6 +471,15 @@ class MainWindow(QtWidgets.QMainWindow):
         totalCorrelation = np.array([[self.totalCorrelation]])
         self.totalCorrelationItem.setImage(totalCorrelation)
         self.totalCorrelationTextItem.setText(f"{self.totalCorrelation:.1f}")
+
+    def updateScaffoldBarsItem(self):
+        # update selection per scaffold plot
+        self.scaffoldBarsItem.setOpts(
+            x=self.chrIndices[self.assignedChromosomesMask] + self.barWidth / 2,
+            height=np.log10(
+                1 + self.joinedScaffoldLengths[self.assignedChromosomesMask]
+            ),
+        )
 
 
 class CorrelationMatrixItem(pg.ImageItem):
