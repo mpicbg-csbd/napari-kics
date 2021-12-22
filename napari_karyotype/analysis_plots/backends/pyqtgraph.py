@@ -267,7 +267,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matchingPlotItem.sigClicked.connect(
             lambda _, ps: self.deleteMatchings([p.index() for p in ps])
         )
-        self.correlationMatrixItem.handleMouseClick = lambda i, j: self.addMatching(
+        self.correlationMatrixItem.handleMouseClick = lambda i, j: self.toggleMatching(
             i, j
         )
 
@@ -377,11 +377,19 @@ class MainWindow(QtWidgets.QMainWindow):
         for scaffIdx in self.matching[:, 0]:
             self.scaffoldSelection[0, scaffIdx] += 1
 
-    def addMatching(self, i, j):
-        if np.any((self.matching[:, 0] == j) & (self.matching[:, 1] == i)):
-            # matching already exists
-            return
+    def toggleMatching(self, i, j):
+        existing = np.nonzero((self.matching[:, 0] == j) & (self.matching[:, 1] == i))
+        # unpack tuple
+        existing = existing[0]
 
+        if len(existing) > 0:
+            # matching already exists
+            self.deleteMatchings(existing)
+        else:
+            # matching does not exist
+            self.addMatching(i, j)
+
+    def addMatching(self, i, j):
         self.matching = np.vstack((self.matching, np.array([j, i])))
         self.updateMatching()
 
