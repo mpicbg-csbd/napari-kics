@@ -52,7 +52,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.colorMap = pg.colormap.get(colorMap)
         self.colorMap.reverse()
-        self.matrixBorderSize = (60, 80)
+        self.matrixBorderSize = (120, 80)
+        self.matrixAxisLabelSize = (80, 20)
+        self.legendWidth = 200
         self.barWidth = 0.3
         self.trSuperDigits = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
 
@@ -93,6 +95,7 @@ class MainWindow(QtWidgets.QMainWindow):
             row=0,
             col=0,
             name="totalCorrelation",
+            title="",
             axisItems={
                 "left": NoLabelAxisItem("left"),
                 "right": NoLabelAxisItem("right"),
@@ -108,7 +111,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalCorrelationPlotItem.setDefaultPadding(0.0)
         # show full frame, label tick marks at top side, with some extra space for labels
         self.totalCorrelationPlotItem.showAxes(
-            True, showValues=(True, True, False, False), size=(40, 20)
+            True, showValues=(True, True, False, False), size=self.matrixAxisLabelSize
         )
         # hide ticks
         self.totalCorrelationPlotItem.getAxis("left").setTicks([])
@@ -118,8 +121,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalCorrelationPlotItem.setLimits(
             xMin=-0.5, xMax=0.5, yMin=-0.5, yMax=0.5
         )
-        self.totalCorrelationPlotItem.setFixedHeight(self.matrixBorderSize[0])
-        self.totalCorrelationPlotItem.setFixedWidth(self.matrixBorderSize[1])
+        self.totalCorrelationPlotItem.setFixedWidth(self.matrixBorderSize[0])
+        self.totalCorrelationPlotItem.setFixedHeight(self.matrixBorderSize[1])
 
     def _populateTotalCorrelationItem(self):
         # prepare transform to center the corner element on the origin, for any assigned image
@@ -130,7 +133,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.totalCorrelationTextItem = pg.TextItem(text="-", anchor=(0.5, 0.5))
         self.totalCorrelationTextItem.setPos(0, 0)
-        self.totalCorrelationTextItem.setTextWidth(self.matrixBorderSize[1] - 40)
+        self.totalCorrelationTextItem.setTextWidth(
+            self.matrixBorderSize[0] - self.matrixAxisLabelSize[0]
+        )
 
         # display indicator and text
         self.totalCorrelationPlotItem.addItem(self.totalCorrelationItem)
@@ -144,6 +149,7 @@ class MainWindow(QtWidgets.QMainWindow):
             row=0,
             col=1,
             name="selectionPerScaffold",
+            title="Scaffolds",
             axisItems={
                 "left": LabelAxisItem("left", self.estimates.index),
                 "right": LabelAxisItem("right", self.estimates.index),
@@ -159,11 +165,23 @@ class MainWindow(QtWidgets.QMainWindow):
         self.selectionPerScaffoldPlotItem.setDefaultPadding(0.0)
         # show full frame, label tick marks at top side, with some extra space for labels
         self.selectionPerScaffoldPlotItem.showAxes(
-            True, showValues=(False, True, False, False), size=20
+            True,
+            showValues=(False, True, False, False),
+            size=self.matrixAxisLabelSize[1],
         )
         self.selectionPerScaffoldPlotItem.setXLink("matrix")
         self.selectionPerScaffoldPlotItem.setLimits(yMin=-0.5, yMax=0.5)
-        self.selectionPerScaffoldPlotItem.setFixedHeight(self.matrixBorderSize[0])
+        self.selectionPerScaffoldPlotItem.setFixedHeight(self.matrixBorderSize[1])
+
+        self.selectionPerScaffoldLegendItem = self.centralWidget().addViewBox(
+            row=0,
+            col=2,
+            name="selectionPerScaffoldLegend",
+            enableMenu=False,
+            enableMouse=False,
+        )
+        self.selectionPerScaffoldLegendItem.setFixedWidth(self.legendWidth)
+        self.selectionPerScaffoldLegendItem.setFixedHeight(self.matrixBorderSize[1])
 
     def _populateSelectionPerScaffoldItem(self):
         # prepare transform to center the corner element on the origin, for any assigned image
@@ -180,6 +198,25 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Update plot if the matching changes
         self.sigMatchingChanged.connect(self.updateSelectionPerScaffoldItem)
+
+        # add a legend
+        legend = pg.LegendItem(offset=(1, 1), sampleType=ItemSample)
+        legend.setParentItem(self.selectionPerScaffoldLegendItem)
+        stateColors = cm.getColors(mode="qcolor")
+        stateColors = {
+            "unselected": stateColors[0],
+            "selected": stateColors[1],
+            "overselected": stateColors[2],
+        }
+
+        def dummyItem(state):
+            return pg.BarGraphItem(
+                x=[], height=[], brush=stateColors[state], pen="#88888888"
+            )
+
+        legend.addItem(dummyItem("unselected"), "Scaffold unselected")
+        legend.addItem(dummyItem("selected"), "Scaffold selected")
+        legend.addItem(dummyItem("overselected"), "Scaffold over-selected")
 
     def _prepareCorrelationPerChromosomeItem(self):
         self.correlationPerChromosomePlotItem = self.centralWidget().addPlot(
@@ -203,11 +240,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.correlationPerChromosomePlotItem.setDefaultPadding(0.0)
         # show full frame, label tick marks at left side, with some extra space for labels
         self.correlationPerChromosomePlotItem.showAxes(
-            True, showValues=(True, False, False, False), size=40
+            True,
+            showValues=(True, False, False, False),
+            size=self.matrixAxisLabelSize[0],
         )
+
+        yAxis = self.correlationPerChromosomePlotItem.getAxis("left")
+        yAxis.setLabel("Chromosomes")
+
         self.correlationPerChromosomePlotItem.setYLink("matrix")
         self.correlationPerChromosomePlotItem.setLimits(xMin=-0.5, xMax=0.5)
-        self.correlationPerChromosomePlotItem.setFixedWidth(self.matrixBorderSize[1])
+        self.correlationPerChromosomePlotItem.setFixedWidth(self.matrixBorderSize[0])
 
     def _populateCorrelationPerChromosomeItem(self):
         # prepare transform to center the corner element on the origin, for any assigned image
@@ -215,9 +258,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.correlationPerChromosomeItem = pg.ImageItem()
         self.correlationPerChromosomeItem.setTransform(alignPixelTransform)
-
-        # The following will be
-        # self.correlationPerChromosomeItem.setImage(self.correlationPerChromosome.reshape(-1, 1))
 
         # display plot
         self.correlationPerChromosomePlotItem.addItem(self.correlationPerChromosomeItem)
@@ -289,6 +329,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 np.max(self.correlationMatrix.values),
             ),
             colorMap=self.colorMap,
+            label="Size correlation",
         )
         self.colorBarItem.setImageItem(
             [
@@ -349,8 +390,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.directComparisonPlotItem = self.centralWidget().addPlot(
             row=2,
             col=0,
-            colspan=3,
+            colspan=2,
             name="directComparison",
+            title="Size comparison of selected matching",
             axisItems={
                 "left": pg.AxisItem("left"),
                 "right": pg.AxisItem("right"),
@@ -360,10 +402,24 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         # show full frame, label tick marks at bottom side, with some extra space for labels
         self.directComparisonPlotItem.showAxes(
-            True, showValues=(True, False, False, True)
+            True,
+            showValues=(True, False, False, True),
+            size=(self.matrixAxisLabelSize[0], None),
         )
-        self.directComparisonPlotItem.setLogMode(y=True)
+        yAxis = self.directComparisonPlotItem.getAxis("left")
+        yAxis.enableAutoSIPrefix(False)
+        yAxis.setLabel("Size", "bp")
+        yAxis.setLogMode(True)
         self.directComparisonPlotItem.showGrid(y=True)
+
+        self.directComparisonLegendItem = self.centralWidget().addViewBox(
+            row=2,
+            col=2,
+            name="directComparisonLegend",
+            enableMenu=False,
+            enableMouse=False,
+        )
+        self.directComparisonLegendItem.setFixedWidth(self.legendWidth)
 
     def _populateDirectComparisonItem(self):
         self.chrIndices = np.arange(len(self.estimates))
@@ -373,17 +429,20 @@ class MainWindow(QtWidgets.QMainWindow):
             height=np.log10(self.estimates),
             width=self.barWidth,
             brush="#66666688",
+            pen="#88888888",
         )
         self.scaffoldBarsItem = pg.BarGraphItem(
-            x=[],
-            height=[],
-            width=self.barWidth,
-            brush="#FFFFFF88",
+            x=[], height=[], width=self.barWidth, brush="#FFFFFF88", pen="#88888888"
         )
 
         # display bars
         self.directComparisonPlotItem.addItem(self.chromsomeBarsItem)
         self.directComparisonPlotItem.addItem(self.scaffoldBarsItem)
+
+        legend = pg.LegendItem(offset=(0, 30), sampleType=ItemSample)
+        legend.setParentItem(self.directComparisonLegendItem)
+        legend.addItem(self.chromsomeBarsItem, "Chromosome size estimates")
+        legend.addItem(self.scaffoldBarsItem, "Combined scaffold sizes")
 
         # Update indicator and text if the matching changes
         self.sigMatchingChanged.connect(self.updateScaffoldBarsItem)
@@ -558,3 +617,23 @@ class NoLabelAxisItem(pg.AxisItem):
             return self.logTickStrings(values, scale, spacing)
 
         return ["" for v in values]
+
+
+class ItemSample(pg.ItemSample):
+    def paint(self, p, *args):
+        if isinstance(self.item, pg.BarGraphItem):
+            opts = self.item.opts
+            if opts.get("antialias"):
+                p.setRenderHint(p.RenderHint.Antialiasing)
+
+            visible = self.item.isVisible()
+            if not visible:
+                icon = invisibleEye.qicon
+                p.drawPixmap(QtCore.QPoint(1, 1), icon.pixmap(18, 18))
+                return
+
+            p.setPen(pg.mkPen(opts["pen"]))
+            p.setBrush(pg.mkBrush(opts["brush"]))
+            p.drawRect(QtCore.QRectF(2, 2, 18, 18))
+        else:
+            super().paint(p, *args)
