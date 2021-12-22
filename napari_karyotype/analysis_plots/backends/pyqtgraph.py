@@ -51,6 +51,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.n, self.m = self.correlationMatrix.shape
 
         self.colorMap = pg.colormap.get(colorMap)
+        self.colorMap.reverse()
         self.matrixBorderSize = (60, 80)
         self.trSuperDigits = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
 
