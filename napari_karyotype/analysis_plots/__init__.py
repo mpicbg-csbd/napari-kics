@@ -57,7 +57,7 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
 
 
 def analysis_plots(
-    scaffold_sizes, estimates, *, max_deviation=30e6, plotlib="pyqtgraph"
+    scaffold_sizes, estimates, *, unmatched_penalty=2.0, plotlib="pyqtgraph"
 ):
     scaffold_sizes = pd.Series(scaffold_sizes)
     scaffold_sizes.sort_values(ascending=False, inplace=True)
@@ -65,7 +65,9 @@ def analysis_plots(
     estimates.sort_values(ascending=False, inplace=True)
 
     # matching = []
-    matching = find_optimal_assignment(estimates, scaffold_sizes, unmatched_penalty=2.0)
+    matching = find_optimal_assignment(
+        estimates, scaffold_sizes, unmatched_penalty=unmatched_penalty
+    )
 
     if "." in plotlib:
         raise ValueError("plotlib must not contain dots ('.')")

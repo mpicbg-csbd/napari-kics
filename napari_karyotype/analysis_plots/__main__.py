@@ -27,7 +27,7 @@ def main():
     analysis_plots(
         scaffold_sizes,
         estimates,
-        max_deviation=args.max_deviation,
+        unmatched_penalty=args.unmatched_penalty,
         plotlib=args.plotlib,
     )
 
@@ -57,11 +57,11 @@ def _parse_args(args=sys.argv[1:]):
         help="Estimated chromosome sizes, one per line",
     )
     parser.add_argument(
-        "--max-deviation",
-        "-d",
+        "--unmatched-penalty",
+        "-p",
         type=float,
-        default=30e6,
-        help="Maximum allowed deviation from estimate (default: 3σ = 30Mb)",
+        default=2.0,
+        help="Penalty multiplier for unmatched scaffolds (default: {default})",
     )
     parser.add_argument(
         "--plotlib",
