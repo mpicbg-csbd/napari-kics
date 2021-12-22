@@ -487,9 +487,10 @@ class LabelAxisItem(pg.AxisItem):
             return self.logTickStrings(values, scale, spacing)
 
         def value2str(v):
-            idx = int(v * scale)
+            vs = v * scale
+            idx = int(vs)
 
-            if 0 <= idx and idx <= len(self.labels):
+            if abs(idx - vs) <= 5e-8 and 0 <= idx and idx < len(self.labels):
                 return str(self.labels[idx])
             else:
                 return ""
