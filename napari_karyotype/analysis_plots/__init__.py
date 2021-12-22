@@ -8,6 +8,10 @@ from logging import basicConfig, getLogger
 log = getLogger(__name__)
 
 
+def size_correlation(estimates, scaffs):
+    return np.log(1 + np.abs(estimates - scaffs, dtype=np.float_))
+
+
 def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
     estimates = pd.Series(estimates).values
     scaffs = pd.Series(scaffs).values
@@ -16,7 +20,7 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
     # Absolute value of difference between each pair of estimate and scaffold
     # estimates = np.log(estimates) / np.log(unmatched_penalty)
     # scaffs = np.log(scaffs) / np.log(unmatched_penalty)
-    abs_diffs = np.log(np.abs(estimates.reshape(-1, 1) - scaffs))
+    correlation_matrix = size_correlation(estimates.reshape(-1, 1), scaffs)
     model = LpProblem(name="estimate-matching", sense=LpMinimize)
     xs = np.array(
         [
@@ -31,9 +35,11 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
         dtype=np.object_,
     )
     # Minimum abs. difference per scaffold
-    mu = np.amin(abs_diffs, axis=0)
+    mu = np.amin(correlation_matrix, axis=0)
     assert mu.shape == (m,)
-    model += np.sum(xs * abs_diffs) + np.sum((1 + mu) * (1 - np.sum(xs, axis=0)))
+    model += np.sum(xs * correlation_matrix) + np.sum(
+        (1 + mu) * (1 - np.sum(xs, axis=0))
+    )
 
     for i in range(n):
         model += (np.sum(xs[i, :]) <= 1, f"max_matches_per_estimate_{i:02d}")

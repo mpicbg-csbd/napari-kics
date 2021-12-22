@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
+from .. import size_correlation
 
 
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
@@ -42,10 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matching = np.fliplr(initialMatching)
         # compute abs. difference as a correlationmeasure
         self.correlationMatrix = pd.DataFrame(
-            1
-            + np.abs(
-                np.atleast_2d(self.estimates.values).T - self.scaffoldSizes.values
-            ),
+            size_correlation(estimates.values.reshape(-1, 1), scaffoldSizes.values),
             index=estimates.index,
             columns=scaffoldSizes.index,
         )
@@ -355,17 +353,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sigMatchingChanged.emit(self)
 
     def updateMatchingScore(self):
-        mask = np.ones(self.correlationMatrix.shape, dtype=bool)
-        mask[self.matching[:, 1], self.matching[:, 0]] = False
+        unselectedMask = np.ones(self.correlationMatrix.shape, dtype=bool)
+        unselectedMask[self.matching[:, 1], self.matching[:, 0]] = False
         selectedScaffoldSizes = (
-            np.zeros_like(self.scaffoldSizes.values, shape=(self.n, 1))
-            + self.scaffoldSizes.values
+            np.zeros((self.n, 1), dtype=np.float_) + self.scaffoldSizes.values
         )
-        selectedScaffoldSizes[mask] = 0
-        rowSums = np.sum(selectedScaffoldSizes, axis=1)
+        selectedScaffoldSizes[unselectedMask] = 0
+        joinedScaffoldLengths = np.sum(selectedScaffoldSizes, axis=1)
+        unassignedChromMask = joinedScaffoldLengths < 1
 
-        self.correlationPerChromosome = np.abs(self.estimates.values - rowSums)
-        self.totalCorrelation = np.mean(self.correlationPerChromosome)
+        self.correlationPerChromosome = size_correlation(
+            self.estimates.values, joinedScaffoldLengths
+        )
+        self.correlationPerChromosome[unassignedChromMask] = np.inf
+        self.totalCorrelation = np.mean(
+            self.correlationPerChromosome[~unassignedChromMask]
+        )
 
     def updateScaffoldSelection(self):
         self.scaffoldSelection = np.zeros((1, self.m), dtype=int)
@@ -410,10 +413,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # update selection per scaffold plot
         totalCorrelation = np.array([[self.totalCorrelation]])
         self.totalCorrelationItem.setImage(totalCorrelation)
-
-        m, e = f"{self.totalCorrelation:.1e}".split("e")
-        e = e.lstrip("+0").translate(self.trSuperDigits)
-        self.totalCorrelationTextItem.setText(m + e)
+        self.totalCorrelationTextItem.setText(f"{self.totalCorrelation:.1f}")
 
 
 class CorrelationMatrixItem(pg.ImageItem):
