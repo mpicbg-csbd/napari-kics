@@ -15,7 +15,18 @@ def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
     pg.setConfigOptions(antialias=True, imageAxisOrder="row-major")
 
     main_window = MainWindow(estimates, scaffoldSizes, initialMatching)
+
+    fix_initial_scaling_of_matrix_view(main_window)
     app.exec_()
+
+
+def fix_initial_scaling_of_matrix_view(main_window):
+    def update_matrix_scale():
+        main_window.matrixPlotItem.autoRange(padding=0)
+
+    QtCore.QTimer.singleShot(0, update_matrix_scale)
+    QtCore.QTimer.singleShot(10, update_matrix_scale)
+    QtCore.QTimer.singleShot(100, update_matrix_scale)
 
 
 class MainWindow(QtWidgets.QMainWindow):
