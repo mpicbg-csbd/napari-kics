@@ -65,6 +65,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.colorMap.reverse()
         self.matrixBorderSize = (120, 80)
         self.matrixAxisLabelSize = (80, 20)
+        self.matrixGridLevels = [(5, -0.5), (1, -0.5)]
         self.legendWidth = 200
         self.barWidth = 0.3
         self.trSuperDigits = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
@@ -180,6 +181,14 @@ class MainWindow(QtWidgets.QMainWindow):
             showValues=(False, True, False, False),
             size=self.matrixAxisLabelSize[1],
         )
+        self.selectionPerScaffoldPlotItem.showGrid(x=True, y=False)
+        for axis in ("top", "bottom"):
+            self.selectionPerScaffoldPlotItem.getAxis(axis).setTickSpacing(
+                levels=self.matrixGridLevels
+            )
+        for axis in ("left", "right"):
+            self.selectionPerScaffoldPlotItem.getAxis(axis).setTicks([])
+
         self.selectionPerScaffoldPlotItem.setXLink("matrix")
         self.selectionPerScaffoldPlotItem.setLimits(yMin=-0.5, yMax=0.5)
         self.selectionPerScaffoldPlotItem.setFixedHeight(self.matrixBorderSize[1])
@@ -255,10 +264,16 @@ class MainWindow(QtWidgets.QMainWindow):
             showValues=(True, False, False, False),
             size=self.matrixAxisLabelSize[0],
         )
+        self.correlationPerChromosomePlotItem.showGrid(x=False, y=True)
 
         yAxis = self.correlationPerChromosomePlotItem.getAxis("left")
         yAxis.setLabel("Chromosomes")
-
+        for axis in ("left", "right"):
+            self.correlationPerChromosomePlotItem.getAxis(axis).setTickSpacing(
+                levels=self.matrixGridLevels
+            )
+        for axis in ("top", "bottom"):
+            self.correlationPerChromosomePlotItem.getAxis(axis).setTicks([])
         self.correlationPerChromosomePlotItem.setYLink("matrix")
         self.correlationPerChromosomePlotItem.setLimits(xMin=-0.5, xMax=0.5)
         self.correlationPerChromosomePlotItem.setFixedWidth(self.matrixBorderSize[0])
@@ -288,6 +303,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matrixPlotItem.setYLink("correlationPerChromosome")
         # set locked aspect ratio of 1
         self.matrixPlotItem.setAspectLocked()
+        self.matrixPlotItem.showGrid(x=True, y=True)
+        for axis in ("left", "bottom", "right", "top"):
+            self.matrixPlotItem.getAxis(axis).setTickSpacing(
+                levels=self.matrixGridLevels
+            )
 
     def _populateMatrixPlotItem(self):
         # prepare transform to center the corner element on the origin, for any assigned image
