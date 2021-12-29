@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
-from .. import size_correlation
+from .. import size_correlation, get_initial_bounds
 
 
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
@@ -324,10 +324,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def _populateColorBarItem(self):
         # generate an adjustabled color bar, initially spanning min to max data value
         self.colorBarItem = pg.ColorBarItem(
-            values=(
-                np.min(self.correlationMatrix.values),
-                np.max(self.correlationMatrix.values),
-            ),
+            values=get_initial_bounds(self.correlationMatrix),
             colorMap=self.colorMap,
             label="Size correlation",
         )
@@ -468,7 +465,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.assignedChromosomesMask = self.joinedScaffoldLengths >= 1
 
         self.correlationPerChromosome = size_correlation(
-            self.estimates.values, self.joinedScaffoldLengths
+            self.estimates.values, 1 + self.joinedScaffoldLengths
         )
         self.correlationPerChromosome[~self.assignedChromosomesMask] = np.inf
         self.totalCorrelation = np.mean(

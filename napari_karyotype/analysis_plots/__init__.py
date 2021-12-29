@@ -9,7 +9,11 @@ log = getLogger(__name__)
 
 
 def size_correlation(estimates, scaffs):
-    return np.log(1 + np.abs(estimates - scaffs, dtype=np.float_))
+    return np.exp(np.abs(np.log(estimates) - np.log(scaffs), dtype=np.float_))
+
+
+def get_initial_bounds(correlation_matrix):
+    return (1, 4)
 
 
 def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
@@ -35,11 +39,9 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
         dtype=np.object_,
     )
     # Minimum abs. difference per scaffold
-    mu = np.amin(correlation_matrix, axis=0)
+    mu = unmatched_penalty * 1 / np.amin(correlation_matrix, axis=0)
     assert mu.shape == (m,)
-    model += np.sum(xs * correlation_matrix) + np.sum(
-        (1 + mu) * (1 - np.sum(xs, axis=0))
-    )
+    model += np.sum(xs * correlation_matrix) + np.sum(mu * (1 - np.sum(xs, axis=0)))
 
     for i in range(n):
         model += (np.sum(xs[i, :]) <= 1, f"max_matches_per_estimate_{i:02d}")
