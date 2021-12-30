@@ -3,6 +3,7 @@ import pandas as pd
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
 from .. import size_correlation, get_initial_bounds
+from collections import namedtuple
 
 
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
@@ -454,13 +455,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.chromsomeBarsItem = pg.BarGraphItem(
             x=self.chrIndices - self.barWidth / 2,
+            y0=np.log10(np.ones_like(self.estimates)),
             height=np.log10(self.estimates),
             width=self.barWidth,
             brush="#66666688",
             pen="#88888888",
         )
         self.scaffoldBarsItem = pg.BarGraphItem(
-            x=[], height=[], width=self.barWidth, brush="#FFFFFF88", pen="#88888888"
+            x=[], height=[], width=self.barWidth, brush="#FFFFFF88", pen="#FFFFFFDD"
         )
 
         # display bars
@@ -488,11 +490,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def _updateMatchingScore(self):
         unselectedMask = np.ones(self.correlationMatrix.shape, dtype=bool)
         unselectedMask[self.matching[:, 1], self.matching[:, 0]] = False
-        selectedScaffoldSizes = (
+        self.selectedScaffoldSizes = (
             np.zeros((self.n, 1), dtype=np.float_) + self.scaffoldSizes.values
         )
-        selectedScaffoldSizes[unselectedMask] = 0
-        self.joinedScaffoldLengths = np.sum(selectedScaffoldSizes, axis=1)
+        self.selectedScaffoldSizes[unselectedMask] = 0
+        self.joinedScaffoldLengths = np.sum(self.selectedScaffoldSizes, axis=1)
         self.assignedChromosomesMask = self.joinedScaffoldLengths >= 1
 
         self.correlationPerChromosome = size_correlation(
@@ -557,12 +559,36 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalCorrelationTextItem.setText(f"{self.totalCorrelation:.1f}")
 
     def updateScaffoldBarsItem(self):
+        BarSpec = namedtuple("BarSpec", ["y0", "y1"])
+
+        numMatched = self.matching.shape[0]
+        bars = dict()
+        for scaffIdx, chrIdx in self.matching:
+            lastBars = bars.get(chrIdx, [])
+            lastBar = lastBars[-1] if len(lastBars) > 0 else BarSpec(1, 1)
+            nextY0 = lastBar.y1
+            nextY1 = nextY0 + self.scaffoldSizes[scaffIdx]
+            lastBars.append(BarSpec(nextY0, nextY1))
+            bars[chrIdx] = lastBars
+
+        xs = list()
+        y0s = list()
+        y1s = list()
+        for chrIdx in sorted(bars.keys()):
+            for bar in bars[chrIdx]:
+                xs.append(chrIdx)
+                y0s.append(bar.y0)
+                y1s.append(bar.y1)
+
+        xs = np.array(xs, dtype=np.float_)
+        y0s = np.array(y0s, dtype=np.float_)
+        y1s = np.array(y1s, dtype=np.float_)
+
         # update selection per scaffold plot
         self.scaffoldBarsItem.setOpts(
-            x=self.chrIndices[self.assignedChromosomesMask] + self.barWidth / 2,
-            height=np.log10(
-                1 + self.joinedScaffoldLengths[self.assignedChromosomesMask]
-            ),
+            x=xs + self.barWidth / 2,
+            y0=np.log10(y0s),
+            height=np.log10(y1s) - np.log10(y0s),
         )
 
 
