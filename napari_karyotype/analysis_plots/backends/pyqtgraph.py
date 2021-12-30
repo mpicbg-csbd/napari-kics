@@ -665,3 +665,6 @@ class ItemSample(pg.ItemSample):
             p.drawRect(QtCore.QRectF(2, 2, 18, 18))
         else:
             super().paint(p, *args)
+
+    def mouseClickEvent(self, event):
+        pass
