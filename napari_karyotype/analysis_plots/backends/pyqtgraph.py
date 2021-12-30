@@ -591,6 +591,11 @@ class MainWindow(QtWidgets.QMainWindow):
             height=np.log10(y1s) - np.log10(y0s),
         )
 
+        self.directComparisonPlotItem.setYRange(
+            np.min(np.log10(y1s)),
+            np.max(np.log10(y1s)),
+        )
+
 
 class CorrelationMatrixItem(pg.ImageItem):
     def __init__(self, chromosomes, scaffoldNames, *args, **kwargs):
