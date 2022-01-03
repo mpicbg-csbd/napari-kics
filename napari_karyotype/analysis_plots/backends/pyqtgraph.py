@@ -479,7 +479,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def keyReleaseEvent(self, e):
         """Handle key release events for the window"""
-        if e.key() == QtCore.Qt.Key.Key_Q:
+        if e == QtGui.QKeySequence.Quit:
             self.close()
 
     def updateMatching(self):
