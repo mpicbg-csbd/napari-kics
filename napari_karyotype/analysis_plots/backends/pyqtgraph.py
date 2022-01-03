@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
+import pyqtgraph.exporters
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
 from .. import size_correlation, get_initial_bounds
 from collections import namedtuple
@@ -481,6 +482,9 @@ class MainWindow(QtWidgets.QMainWindow):
         """Handle key release events for the window"""
         if e == QtGui.QKeySequence.Quit:
             self.close()
+        elif e == QtGui.QKeySequence.Print:
+            exporter = SVGExporter(self.centralWidget().scene(), parent=self)
+            exporter.export()
 
     def updateMatching(self):
         self._updateMatchingScore()
@@ -701,3 +705,36 @@ class ItemSample(pg.ItemSample):
 
     def mouseClickEvent(self, event):
         pass
+
+
+class SVGExporter(pg.exporters.SVGExporter):
+    def __init__(self, *args, parent=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.parent = parent
+
+    def fileSaveDialog(self, filter=None, opts=None):
+        if opts is None:
+            opts = {}
+        if not self.parent is None:
+            self.fileDialog = pg.FileDialog(self.parent)
+        else:
+            self.fileDialog = pg.FileDialog()
+        self.fileDialog.setFileMode(QtWidgets.QFileDialog.FileMode.AnyFile)
+        self.fileDialog.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        if filter is not None:
+            if isinstance(filter, str):
+                self.fileDialog.setNameFilter(filter)
+            elif isinstance(filter, list):
+                self.fileDialog.setNameFilters(filter)
+        from pyqtgraph.exporters.Exporter import LastExportDirectory
+
+        exportDir = LastExportDirectory
+        if exportDir is not None:
+            self.fileDialog.setDirectory(exportDir)
+        self.fileDialog.opts = opts
+        self.fileDialog.accepted.connect(self.fileSaveFinished)
+        self.fileDialog.exec_()
+
+    def fileSaveFinished(self):
+        fileName = self.fileDialog.selectedFiles()[0]
+        super().fileSaveFinished(fileName)
