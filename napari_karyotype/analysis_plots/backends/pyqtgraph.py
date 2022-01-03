@@ -43,9 +43,14 @@ class MainWindow(QtWidgets.QMainWindow):
         initialMatching,
         *qtArgs,
         colorMap="magma",
+        theme="dark",
         **qtKwargs,
     ):
         super().__init__(*qtArgs, **qtKwargs)
+
+        self._colorMap = colorMap
+        self.theme = theme
+        self.updateTheme()
 
         # store data that should be displayed
         self.estimates = pd.Series(estimates)
@@ -63,8 +68,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # store matrix dimensions for concise access
         self.n, self.m = self.correlationMatrix.shape
 
-        self.colorMap = pg.colormap.get(colorMap)
-        self.colorMap.reverse()
         self.matrixBorderSize = (120, 80)
         self.matrixAxisLabelSize = (80, 20)
         self.matrixGridLevels = [(5, -0.5), (1, -0.5)]
@@ -75,11 +78,76 @@ class MainWindow(QtWidgets.QMainWindow):
         # setup window appearance
         self.setWindowTitle("Chromosome size estimation: analysis plots")
         self.resize(20 * self.m, 40 * self.n)
-        self.setCentralWidget(pg.GraphicsLayoutWidget(show=True))
+        self.setCentralWidget(pg.GraphicsLayoutWidget(show=True, parent=self))
 
         self._attachMatrixPlot()
 
         self.show()
+
+    def switchTheme(self):
+        if self.theme == "dark":
+            self.theme = "light"
+        elif self.theme == "light":
+            self.theme = "dark"
+        else:
+            raise Exception(f"unkown theme: {self.theme}")
+
+        self.updateTheme()
+
+    def updateTheme(self):
+        if self.theme == "dark":
+            self._setDarkTheme()
+        elif self.theme == "light":
+            self._setLightTheme()
+        else:
+            raise Exception(f"unkown theme: {self.theme}")
+
+        if hasattr(self, "colorBarItem"):
+            self._applyMatrixColorMap()
+        if hasattr(self, "selectionPerScaffoldItem"):
+            self._applyTristateColorMap()
+        if hasattr(self, "scaffoldBarsItem"):
+            self._applyDirectComparisonStyle()
+        if self.centralWidget() is not None:
+            self._applyDefaultColors()
+
+    def _setLightTheme(self):
+        print("switching theme to light")
+
+        if not hasattr(self, "_lightColorMap"):
+            self._lightColorMap = pg.colormap.get(self._colorMap, skipCache=True)
+            self._lightColorMap.reverse()
+
+        pg.setConfigOptions(foreground="d", background="w")
+        self.matrixColorMap = self._lightColorMap
+        self.tristateColorMap = pg.ColorMap([0.0, 0.5, 1.0], ["white", "black", "red"])
+        self.directComparisonChromosomeStyle = {
+            "brush": pg.mkBrush("#66666688"),
+            "pen": pg.mkPen("#44444488"),
+        }
+        self.directComparisonScaffoldStyle = {
+            "brush": pg.mkBrush("#00000088"),
+            "pen": pg.mkPen("#333333DD"),
+        }
+
+    def _setDarkTheme(self):
+        print("switching theme to dark")
+
+        if not hasattr(self, "_darkColorMap"):
+            self._darkColorMap = pg.colormap.get(self._colorMap, skipCache=True)
+            self._darkColorMap.reverse()
+
+        pg.setConfigOptions(foreground="d", background="k")
+        self.matrixColorMap = self._darkColorMap
+        self.tristateColorMap = pg.ColorMap([0.0, 0.5, 1.0], ["black", "white", "red"])
+        self.directComparisonChromosomeStyle = {
+            "brush": pg.mkBrush("#66666688"),
+            "pen": pg.mkPen("#88888888"),
+        }
+        self.directComparisonScaffoldStyle = {
+            "brush": pg.mkBrush("#FFFFFF88"),
+            "pen": pg.mkPen("#FFFFFFDD"),
+        }
 
     def _attachMatrixPlot(self):
         self._prepareTotalCorrelationItem()
@@ -211,8 +279,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.selectionPerScaffoldItem = pg.ImageItem()
         self.selectionPerScaffoldItem.setTransform(alignPixelTransform)
-        cm = pg.ColorMap([0.0, 0.5, 1.0], ["black", "white", "red"])
-        self.selectionPerScaffoldItem.setLookupTable(cm.getLookupTable(nPts=3))
 
         # display plot
         self.selectionPerScaffoldPlotItem.addItem(self.selectionPerScaffoldItem)
@@ -222,23 +288,35 @@ class MainWindow(QtWidgets.QMainWindow):
         self.sigMatchingChanged.connect(self.updateSelectionPerScaffoldItem)
 
         # add a legend
-        legend = pg.LegendItem(offset=(1, 1), sampleType=ItemSample)
-        legend.setParentItem(self.selectionPerScaffoldLegendItem)
-        stateColors = cm.getColors(mode="qcolor")
-        stateColors = {
-            "unselected": stateColors[0],
-            "selected": stateColors[1],
-            "overselected": stateColors[2],
-        }
+        self.selectionLegend = pg.LegendItem(offset=(1, 1), sampleType=ItemSample)
+        self.selectionLegend.setParentItem(self.selectionPerScaffoldLegendItem)
 
-        def dummyItem(state):
-            return pg.BarGraphItem(
-                x=[], height=[], brush=stateColors[state], pen="#88888888"
-            )
+        self._applyTristateColorMap()
 
-        legend.addItem(dummyItem("unselected"), "Scaffold unselected")
-        legend.addItem(dummyItem("selected"), "Scaffold selected")
-        legend.addItem(dummyItem("overselected"), "Scaffold over-selected")
+    def _applyTristateColorMap(self):
+        self.selectionPerScaffoldItem.setLookupTable(
+            self.tristateColorMap.getLookupTable(nPts=3)
+        )
+
+        stateColors = self.tristateColorMap.getColors(mode="qcolor")
+
+        if len(self.selectionLegend.items) < 3:
+            self.selectionLegend.clear()
+            labels = [
+                "Scaffold unselected",
+                "Scaffold selected",
+                "Scaffold over-selected",
+            ]
+            for color, label in zip(stateColors, labels):
+                self.selectionLegend.addItem(
+                    pg.BarGraphItem(x=[], height=[], brush=color, pen="#88888888"),
+                    label,
+                )
+        else:
+            for legendItem, color in zip(self.selectionLegend.items, stateColors):
+                sample = legendItem[0]
+                sample.item.setOpts(brush=color)
+            self.selectionLegend.updateSize()
 
     def _prepareCorrelationPerChromosomeItem(self):
         self.correlationPerChromosomePlotItem = self.centralWidget().addPlot(
@@ -358,7 +436,6 @@ class MainWindow(QtWidgets.QMainWindow):
         # generate an adjustabled color bar, initially spanning min to max data value
         self.colorBarItem = pg.ColorBarItem(
             values=get_initial_bounds(self.correlationMatrix),
-            colorMap=self.colorMap,
             label="Size correlation",
         )
         self.colorBarItem.setImageItem(
@@ -371,6 +448,20 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         # add space for axis labels
         self.colorBarItem.getAxis("right").setWidth(80)
+        self._applyMatrixColorMap()
+
+    def _applyMatrixColorMap(self):
+        self.colorBarItem.setColorMap(self.matrixColorMap)
+
+    def _applyDefaultColors(self):
+        # FIXME update colors of plot/legend titles
+        self.centralWidget().setBackground("default")
+        for item in self.centralWidget().ci.items.keys():
+            if hasattr(item, "getAxis"):
+                for axis in ("left", "bottom", "right", "top"):
+                    ax = item.getAxis(axis)
+                    ax.setPen()
+                    ax.setTextPen()
 
     def _addMatrixCrosshair(self):
         self.__signalProxies = list()
@@ -454,37 +545,61 @@ class MainWindow(QtWidgets.QMainWindow):
     def _populateDirectComparisonItem(self):
         self.chrIndices = np.arange(len(self.estimates))
 
-        self.chromsomeBarsItem = pg.BarGraphItem(
+        self.chromosomeBarsItem = pg.BarGraphItem(
             x=self.chrIndices - self.barWidth / 2,
             y0=np.log10(np.ones_like(self.estimates)),
             height=np.log10(self.estimates),
             width=self.barWidth,
-            brush="#66666688",
-            pen="#88888888",
         )
-        self.scaffoldBarsItem = pg.BarGraphItem(
-            x=[], height=[], width=self.barWidth, brush="#FFFFFF88", pen="#FFFFFFDD"
-        )
+        self.scaffoldBarsItem = pg.BarGraphItem(x=[], height=[], width=self.barWidth)
+        self._applyDirectComparisonStyle()
 
         # display bars
-        self.directComparisonPlotItem.addItem(self.chromsomeBarsItem)
+        self.directComparisonPlotItem.addItem(self.chromosomeBarsItem)
         self.directComparisonPlotItem.addItem(self.scaffoldBarsItem)
 
         legend = pg.LegendItem(offset=(0, 30), sampleType=ItemSample)
         legend.setParentItem(self.directComparisonLegendItem)
-        legend.addItem(self.chromsomeBarsItem, "Chromosome size estimates")
+        legend.addItem(self.chromosomeBarsItem, "Chromosome size estimates")
         legend.addItem(self.scaffoldBarsItem, "Combined scaffold sizes")
 
         # Update indicator and text if the matching changes
         self.sigMatchingChanged.connect(self.updateScaffoldBarsItem)
+
+    def _applyDirectComparisonStyle(self):
+        self.chromosomeBarsItem.setOpts(**self.directComparisonChromosomeStyle)
+        self.scaffoldBarsItem.setOpts(**self.directComparisonScaffoldStyle)
 
     def keyReleaseEvent(self, e):
         """Handle key release events for the window"""
         if e == QtGui.QKeySequence.Quit:
             self.close()
         elif e == QtGui.QKeySequence.Print:
-            exporter = SVGExporter(self.centralWidget().scene(), parent=self)
-            exporter.export()
+            self.export()
+        elif e.key() == QtCore.Qt.Key.Key_T:
+            self.switchTheme()
+
+    def export(self):
+        self._hideCrossHair(hide=True)
+        exporter = SVGExporter(self.centralWidget().scene(), parent=self)
+        exporter.export()
+        self._hideCrossHair(hide=False)
+
+    def _hideCrossHair(self, hide=True):
+        for hline in self.__matrixCrosshairHLines:
+            if hide:
+                hline.old_pos = hline.getPos()
+                hline.setPos(-100_000)
+            else:
+                hline.setPos(hline.old_pos)
+                del hline.old_pos
+        for vline in self.__matrixCrosshairVLines:
+            if hide:
+                vline.old_pos = vline.getPos()
+                vline.setPos(-100_000)
+            else:
+                vline.setPos(vline.old_pos)
+                del vline.old_pos
 
     def updateMatching(self):
         self._updateMatchingScore()
@@ -543,7 +658,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matchingPlotItem.setData(pos=self.matching, data=matchingIndices)
 
     def updateCorrelationPerChromosomeItem(self):
-        # update correlation per chromsome plot
+        # update correlation per chromosome plot
         self.correlationPerChromosomeItem.setImage(
             self.correlationPerChromosome.reshape(-1, 1)
         )
