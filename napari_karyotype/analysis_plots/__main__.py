@@ -34,12 +34,39 @@ def main():
 
 def _parse_args(args=sys.argv[1:]):
     import argparse
+    import os
+
+    class ArgumentParser(argparse.ArgumentParser):
+        def remove_argument(self, dest):
+            self._actions = [action for action in self._actions if action.dest != dest]
+
+    class LoadExampleAction(argparse.Action):
+        def __init__(self, option_strings, dest, nargs=0, **kwargs):
+            if nargs != 0:
+                raise ValueError("nargs must be zero")
+            super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            if len(values) != 0:
+                raise ValueError("values not allowed")
+
+            module_root = os.path.dirname(__file__)
+
+            namespace.scaffold_sizes = f"{module_root}/resources/data/mMyoMyo.fasta.fai"
+            namespace.scaffold_sizes = argparse.FileType("r")(namespace.scaffold_sizes)
+            parser.remove_argument("scaffold_sizes")
+
+            namespace.estimates = f"{module_root}/resources/data/mMyoMyo.estimates.tsv"
+            namespace.estimates = argparse.FileType("r")(namespace.estimates)
+            parser.remove_argument("estimates")
+
+            setattr(namespace, self.dest, True)
 
     prog = sys.argv[0]
     if prog == "__main__":
         prog = "python -m napari_karyotype.analysis_plots"
 
-    parser = argparse.ArgumentParser(
+    parser = ArgumentParser(
         prog="analysis_plots",
         description=(
             "Generate plots that allow comparing chromosome"
@@ -57,11 +84,10 @@ def _parse_args(args=sys.argv[1:]):
         help="Estimated chromosome sizes, one per line",
     )
     parser.add_argument(
-        "--unmatched-penalty",
-        "-p",
-        type=float,
-        default=2.0,
-        help="Penalty multiplier for unmatched scaffolds (default: {default})",
+        "--example",
+        action=LoadExampleAction,
+        nargs=0,
+        help="Load example data",
     )
     parser.add_argument(
         "--plotlib",
@@ -69,6 +95,13 @@ def _parse_args(args=sys.argv[1:]):
         choices=["pyqtgraph", "matplotlib"],
         default="pyqtgraph",
         help="Plotting library to use (default: {default})",
+    )
+    parser.add_argument(
+        "--unmatched-penalty",
+        "-p",
+        type=float,
+        default=2.0,
+        help="Penalty multiplier for unmatched scaffolds (default: {default})",
     )
 
     return parser.parse_args(args)
