@@ -164,10 +164,10 @@ class MainWindow(QtWidgets.QMainWindow):
             name="selectionPerScaffold",
             title="Scaffolds",
             axisItems={
-                "left": LabelAxisItem("left", self.estimates.index),
-                "right": LabelAxisItem("right", self.estimates.index),
-                "top": LabelAxisItem("top", self.scaffoldSizes.index),
-                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index),
+                "left": LabelAxisItem("left", self.estimates.index, offset=0.5),
+                "right": LabelAxisItem("right", self.estimates.index, offset=0.5),
+                "top": LabelAxisItem("top", self.scaffoldSizes.index, offset=0.5),
+                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index, offset=0.5),
             },
             enableMenu=False,
         )
@@ -245,10 +245,10 @@ class MainWindow(QtWidgets.QMainWindow):
             col=0,
             name="correlationPerChromosome",
             axisItems={
-                "left": LabelAxisItem("left", self.estimates.index),
-                "right": LabelAxisItem("right", self.estimates.index),
-                "top": LabelAxisItem("top", self.scaffoldSizes.index),
-                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index),
+                "left": LabelAxisItem("left", self.estimates.index, offset=0.5),
+                "right": LabelAxisItem("right", self.estimates.index, offset=0.5),
+                "top": LabelAxisItem("top", self.scaffoldSizes.index, offset=0.5),
+                "bottom": LabelAxisItem("bottom", self.scaffoldSizes.index, offset=0.5),
             },
             enableMenu=False,
         )
@@ -648,17 +648,19 @@ class CorrelationMatrixItem(pg.ImageItem):
 
 
 class LabelAxisItem(pg.AxisItem):
-    def __init__(self, orientation, labels, *args, **kwargs):
+    def __init__(self, orientation, labels, *args, offset=0, **kwargs):
         super().__init__(orientation, *args, **kwargs)
         self.labels = labels
+        self.offset = offset
 
     def tickStrings(self, values, scale, spacing):
         """Return the strings that should be placed next to ticks."""
+
         if self.logMode:
             return self.logTickStrings(values, scale, spacing)
 
         def value2str(v):
-            vs = v * scale
+            vs = v * scale + self.offset
             idx = int(vs)
 
             if abs(idx - vs) <= 5e-8 and 0 <= idx and idx < len(self.labels):
