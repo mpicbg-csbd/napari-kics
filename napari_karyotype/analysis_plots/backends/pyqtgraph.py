@@ -5,6 +5,9 @@ import pyqtgraph.exporters
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
 from .. import size_correlation, get_initial_bounds
 from collections import namedtuple
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
@@ -112,7 +115,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self._applyDefaultColors()
 
     def _setLightTheme(self):
-        print("switching theme to light")
+        log.info("switching theme to light")
 
         if not hasattr(self, "_lightColorMap"):
             self._lightColorMap = pg.colormap.get(self._colorMap, skipCache=True)
@@ -131,7 +134,7 @@ class MainWindow(QtWidgets.QMainWindow):
         }
 
     def _setDarkTheme(self):
-        print("switching theme to dark")
+        log.info("switching theme to dark")
 
         if not hasattr(self, "_darkColorMap"):
             self._darkColorMap = pg.colormap.get(self._colorMap, skipCache=True)
