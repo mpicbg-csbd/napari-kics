@@ -55,6 +55,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.theme = theme
         self.updateTheme()
 
+        self.registerKeyboardActions()
+
         # store data that should be displayed
         self.estimates = pd.Series(estimates)
         self.estimates.name = self.estimates.name or "chromosome_estimates"
@@ -151,6 +153,22 @@ class MainWindow(QtWidgets.QMainWindow):
             "brush": pg.mkBrush("#FFFFFF88"),
             "pen": pg.mkPen("#FFFFFFDD"),
         }
+
+    def registerKeyboardActions(self):
+        self.registerKeyboardAction(
+            QtGui.QKeySequence.HelpContents, self.showHelp, "Show this help dialog"
+        )
+        self.registerKeyboardAction(
+            QtGui.QKeySequence.Print, self.export, "Export current plots as SVG"
+        )
+        self.registerKeyboardAction(
+            QtCore.Qt.Key.Key_T,
+            self.switchTheme,
+            "Switch theme between light and dark.",
+        )
+        self.registerKeyboardAction(
+            QtGui.QKeySequence.Quit, self.close, "Quit the plotting application."
+        )
 
     def _attachMatrixPlot(self):
         self._prepareTotalCorrelationItem()
@@ -573,20 +591,56 @@ class MainWindow(QtWidgets.QMainWindow):
         self.chromosomeBarsItem.setOpts(**self.directComparisonChromosomeStyle)
         self.scaffoldBarsItem.setOpts(**self.directComparisonScaffoldStyle)
 
+    def registerKeyboardAction(self, key, action, description):
+        if not hasattr(self, "_keyboardActions"):
+            self._keyboardActions = list()
+        self._keyboardActions.append((key, action, description))
+
     def keyReleaseEvent(self, e):
         """Handle key release events for the window"""
-        if e == QtGui.QKeySequence.Quit:
-            self.close()
-        elif e == QtGui.QKeySequence.Print:
-            self.export()
-        elif e.key() == QtCore.Qt.Key.Key_T:
-            self.switchTheme()
+        for key, action, _ in self._keyboardActions:
+            if isinstance(key, QtGui.QKeySequence.StandardKey):
+                if e == key:
+                    action()
+                    return
+            elif isinstance(key, QtCore.Qt.Key):
+                if e.key() == key:
+                    action()
+                    return
 
     def export(self):
         self._hideCrossHair(hide=True)
         exporter = SVGExporter(self.centralWidget().scene(), parent=self)
         exporter.export()
         self._hideCrossHair(hide=False)
+
+    helpBaseTemplate = """\
+<table>
+    <tr style="">
+        <td style="padding-bottom: 10px; font-style: italic;">Key</td>
+        <td style="padding-bottom: 10px; font-style: italic;">Description</td>
+    </tr>
+    {keys}
+</table>"""
+    helpKeyTemplate = (
+        '<tr><td style="padding-right: 20px">{key}</td><td>{desc}</td></tr>'
+    )
+
+    def showHelp(self):
+        helpText = self.helpBaseTemplate.format(
+            keys="".join(
+                self.helpKeyTemplate.format(
+                    key=QtGui.QKeySequence(key).toString(), desc=desc
+                )
+                for key, _, desc in self._keyboardActions
+            )
+        )
+
+        msgBox = QtGui.QMessageBox.information(
+            self,
+            "Help",
+            helpText,
+        )
 
     def _hideCrossHair(self, hide=True):
         for hline in self.__matrixCrosshairHLines:
