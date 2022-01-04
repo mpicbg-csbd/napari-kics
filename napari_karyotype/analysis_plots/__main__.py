@@ -62,12 +62,12 @@ def _parse_args(args=sys.argv[1:]):
 
             setattr(namespace, self.dest, True)
 
-    prog = sys.argv[0]
-    if prog == "__main__":
-        prog = "python -m napari_karyotype.analysis_plots"
+    prog = os.path.basename(sys.argv[0])
+    if prog == "__main__.py":
+        prog = f"{sys.executable} -m napari_karyotype.analysis_plots"
 
     parser = ArgumentParser(
-        prog="analysis_plots",
+        prog=prog,
         description=(
             "Generate plots that allow comparing chromosome"
             " size estimates and actual scaffold sizes in a meaningful manner."
