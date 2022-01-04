@@ -48,7 +48,7 @@ pip install -e .
 You may use the interactive analysis plots directly via command line:
 
 ```sh
-python -m napari_karyotype.analysis_plots --help
+karyotype-analysis-plots
 ```
 
 
@@ -62,7 +62,7 @@ python -m napari_karyotype.analysis_plots --help
 Try out the interactive analysis plots directly via command line:
 
 ```sh
-python -m napari_karyotype.analysis_plots --example
+karyotype-analysis-plots --example
 ```
 
 

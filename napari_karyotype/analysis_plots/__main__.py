@@ -4,6 +4,7 @@
 
 import pdb  # pylint: disable=unused-import
 import sys
+import os.path
 from pulp import GLPK, LpMaximize, LpMinimize, LpProblem, LpStatus, LpVariable
 import numpy as np
 import pandas as pd
@@ -15,6 +16,7 @@ log = logging.getLogger(__name__)
 
 
 def main():
+    logging.basicConfig()
     args = _parse_args()
 
     if args.scaffold_sizes.name.endswith(".fai"):
@@ -32,7 +34,7 @@ def main():
     )
 
 
-def _parse_args(args=sys.argv[1:]):
+def _parse_args():
     import argparse
     import os
 
@@ -65,6 +67,8 @@ def _parse_args(args=sys.argv[1:]):
     prog = os.path.basename(sys.argv[0])
     if prog == "__main__.py":
         prog = f"{sys.executable} -m napari_karyotype.analysis_plots"
+
+    args = sys.argv[1:]
 
     parser = ArgumentParser(
         prog=prog,
@@ -108,5 +112,4 @@ def _parse_args(args=sys.argv[1:]):
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
     main()
