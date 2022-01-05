@@ -30,6 +30,8 @@ def main():
         scaffold_sizes,
         estimates,
         unmatched_penalty=args.unmatched_penalty,
+        min_scaffold_size=args.min_scaffold_size,
+        max_scaffolds=args.max_scaffolds,
         plotlib=args.plotlib,
     )
 
@@ -98,14 +100,29 @@ def _parse_args():
         "-l",
         choices=["pyqtgraph", "matplotlib"],
         default="pyqtgraph",
-        help="Plotting library to use (default: {default})",
+        help="Plotting library to use (default: %(default)s)",
     )
     parser.add_argument(
         "--unmatched-penalty",
         "-p",
         type=float,
         default=2.0,
-        help="Penalty multiplier for unmatched scaffolds (default: {default})",
+        help="Penalty multiplier for unmatched scaffolds (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--min-scaffold-size",
+        "-m",
+        type=int,
+        default=0,
+        help="Minimum size of a scaffold to be included (default: %(default)s)",
+    )
+    parser.add_argument(
+        "--max-scaffolds",
+        "-M",
+        type=int,
+        default=-1,
+        metavar="NUM",
+        help="Take only the NUM largest scaffolds into account (default: all)",
     )
 
     return parser.parse_args(args)

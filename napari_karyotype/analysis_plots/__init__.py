@@ -59,14 +59,24 @@ def find_optimal_assignment(estimates, scaffs, *, unmatched_penalty=2.0):
 
 
 def analysis_plots(
-    scaffold_sizes, estimates, *, unmatched_penalty=2.0, plotlib="pyqtgraph"
+    scaffold_sizes,
+    estimates,
+    *,
+    unmatched_penalty=2.0,
+    min_scaffold_size=0,
+    max_scaffolds=-1,
+    plotlib="pyqtgraph",
 ):
     scaffold_sizes = pd.Series(scaffold_sizes)
+    if min_scaffold_size > 0:
+        scaffold_sizes = scaffold_sizes.loc[scaffold_sizes >= min_scaffold_size]
     scaffold_sizes.sort_values(ascending=False, inplace=True)
+    if max_scaffolds is not None and max_scaffolds < len(scaffold_sizes):
+        scaffold_sizes = scaffold_sizes.iloc[0:max_scaffolds]
     estimates = pd.Series(estimates)
     estimates.sort_values(ascending=False, inplace=True)
 
-    # matching = []
+    # matching = list((i, i) for i in range(len(estimates)))
     matching = find_optimal_assignment(
         estimates, scaffold_sizes, unmatched_penalty=unmatched_penalty
     )
