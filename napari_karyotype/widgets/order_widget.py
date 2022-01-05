@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
-from napari_karyotype.utils import get_img, guess_chromosome_labels
+from napari_karyotype.utils import get_img, guess_chromosome_labels, ChromosomeLabel
 from math import hypot
 from skimage.measure import regionprops
 
@@ -205,8 +205,8 @@ class OrderWidget(QVBoxLayout):
 
             for ind, label_list in enumerate(self.order_new):
                 for subind, label in enumerate(label_list):
-                    self.table.model().dataframe.at[label, "label"] = (
-                        str(ind + 1) + string.ascii_lowercase[subind]
+                    self.table.model().dataframe.at[label, "label"] = ChromosomeLabel(
+                        ind, subind, None, None
                     )
 
             unprocessed_labels = (
