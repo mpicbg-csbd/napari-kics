@@ -14,7 +14,7 @@ class SavingWidget(QVBoxLayout):
         self.table = table
 
         self.save_path_line_edit = ClickableLineEdit(
-            f"{Path(__file__).absolute().parent}/resources/example_output"
+            placeholderText="Select output directory", mode="directory"
         )
 
         self.save_btn = QPushButton("Save")
