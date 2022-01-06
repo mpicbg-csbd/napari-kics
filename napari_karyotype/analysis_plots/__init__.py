@@ -92,6 +92,107 @@ def analysis_plots(
     plot_backend.do_plot(estimates, scaffold_sizes, matching)
 
 
+def get_argument_parser():
+    import argparse
+    import os
+    import sys
+
+    class ArgumentParser(argparse.ArgumentParser):
+        def remove_argument(self, dest):
+            self._actions = [action for action in self._actions if action.dest != dest]
+
+        def get_argument(self, dest):
+            found = [action for action in self._actions if action.dest == dest]
+            if len(found) == 0:
+                raise IndexError("no argument found")
+            return found[0]
+
+        def __getitem__(self, dest):
+            return self.get_argument(dest)
+
+    class LoadExampleAction(argparse.Action):
+        def __init__(self, option_strings, dest, nargs=0, **kwargs):
+            if nargs != 0:
+                raise ValueError("nargs must be zero")
+            super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+        def __call__(self, parser, namespace, values, option_string=None):
+            if len(values) != 0:
+                raise ValueError("values not allowed")
+
+            module_root = os.path.dirname(__file__)
+
+            namespace.scaffold_sizes = f"{module_root}/resources/data/mMyoMyo.fasta.fai"
+            namespace.scaffold_sizes = argparse.FileType("r")(namespace.scaffold_sizes)
+            parser.remove_argument("scaffold_sizes")
+
+            namespace.estimates = f"{module_root}/resources/data/mMyoMyo.estimates.tsv"
+            namespace.estimates = argparse.FileType("r")(namespace.estimates)
+            parser.remove_argument("estimates")
+
+            setattr(namespace, self.dest, True)
+
+    prog = os.path.basename(sys.argv[0])
+    if prog == "__main__.py":
+        prog = f"{sys.executable} -m napari_karyotype.analysis_plots"
+
+    parser = ArgumentParser(
+        prog=prog,
+        description=(
+            "Generate plots that allow comparing chromosome"
+            " size estimates and actual scaffold sizes in a meaningful manner."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "scaffold_sizes",
+        type=argparse.FileType("r"),
+        help="Scaffold sizes either one per line or a FASTA-index",
+    )
+    parser.add_argument(
+        "estimates",
+        type=argparse.FileType("r"),
+        help="Estimated chromosome sizes, one per line",
+    )
+    parser.add_argument(
+        "--example",
+        action=LoadExampleAction,
+        nargs=0,
+        help="Load example data",
+    )
+    parser.add_argument(
+        "--plotlib",
+        "-l",
+        choices=["pyqtgraph", "matplotlib"],
+        default="pyqtgraph",
+        help="Plotting library to use.",
+    )
+    parser.add_argument(
+        "--unmatched-penalty",
+        "-p",
+        type=float,
+        default=2.0,
+        help="Penalty multiplier for unmatched scaffolds.",
+    )
+    parser.add_argument(
+        "--min-scaffold-size",
+        "-m",
+        type=int,
+        default=100_000,
+        help="Minimum size of a scaffold to be included.",
+    )
+    parser.add_argument(
+        "--max-scaffolds",
+        "-M",
+        type=int,
+        default=50,
+        metavar="NUM",
+        help="Take only the NUM largest scaffolds into account.",
+    )
+
+    return parser
+
+
 def read_fasta_index(fai_file):
     fai = pd.read_table(
         fai_file,
