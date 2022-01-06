@@ -8,6 +8,7 @@ from .label_widget import LabelWidget
 from .order_widget import OrderWidget
 from .saving_widget import SavingWidget
 from .threshold_widget import ThresholdWidget
+from .analysis_widget import AnalysisWidget
 
 
 # main widget
@@ -18,6 +19,7 @@ class KaryotypeWidget(QWidget):
         self.viewer = napari_viewer
 
         # layout settings
+        # QScrollArea
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.layout.setAlignment(Qt.AlignTop)
@@ -47,6 +49,10 @@ class KaryotypeWidget(QWidget):
         # annotation
         self.annotation_widget = AnnotationWidget(self.viewer, self.label_widget.table)
         self.layout.addLayout(self.annotation_widget)
+
+        # analysis
+        self.analysis_widget = AnalysisWidget(self.viewer, self.label_widget.table)
+        self.layout.addLayout(self.analysis_widget)
 
         # saving
         self.saving_widget = SavingWidget(self.viewer, self.label_widget.table)

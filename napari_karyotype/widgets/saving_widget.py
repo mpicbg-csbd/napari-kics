@@ -26,7 +26,7 @@ class SavingWidget(QVBoxLayout):
             lambda e: self.save_output(self.save_path_line_edit.text())
         )
 
-        self.descr_label = QLabel("6. Save results to the the following directory:")
+        self.descr_label = QLabel("7. Save results to the the following directory:")
 
         self.addWidget(self.descr_label)
         self.addWidget(self.save_path_line_edit)
