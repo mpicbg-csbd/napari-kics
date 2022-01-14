@@ -121,11 +121,11 @@ class LabelWidget(QVBoxLayout):
 
     def update_table(self):
 
-        res_dict = self.label_manager.process_history_step()
+        recent_changes = self.label_manager.recent_changes()
 
-        print(f"res_dict is {res_dict}")
+        print(f"recent_changes is {recent_changes}")
 
-        for (label, increment) in res_dict.items():
+        for (label, increment) in recent_changes.items():
 
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
