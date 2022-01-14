@@ -12,19 +12,28 @@ from .analysis_widget import AnalysisWidget
 
 
 # main widget
-class KaryotypeWidget(QWidget):
+class KaryotypeWidget(QScrollArea):
+    def __init__(self, napari_viewer):
+        super().__init__()
+        # add scroll bars
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setWidgetResizable(True)
+        self.setWidget(KaryotypeContentWidget(napari_viewer))
+
+
+class KaryotypeContentWidget(QWidget):
     def __init__(self, napari_viewer):
         super().__init__()
 
         self.viewer = napari_viewer
 
         # layout settings
-        # QScrollArea
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setSpacing(20)
-        self.setMaximumWidth(550)
+        self.setMinimumWidth(400)
+        self.setMaximumWidth(800)
 
         # head
         self.head_layout = HeadLayout()
