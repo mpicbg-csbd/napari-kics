@@ -1,4 +1,33 @@
 import numpy as np
+from collections import namedtuple
+
+
+class ChangeRecord:
+    def __init__(self, area_diff, xs, ys):
+        self.area_diff = area_diff
+        self.xs = xs
+        self.ys = ys
+
+    def coord(self):
+        return (self.xs[0], self.ys[0])
+
+    def bbox(self, bbox=None):
+        if bbox is None:
+            return (
+                min(self.xs),
+                min(self.ys),
+                max(self.xs),
+                max(self.ys),
+            )
+        else:
+            _bbox = self.bbox()
+
+            return (
+                min(_bbox[0], bbox[0]),
+                min(_bbox[1], bbox[1]),
+                max(_bbox[2], bbox[2]),
+                max(_bbox[3], bbox[3]),
+            )
 
 
 class LabelHistoryProcessor:
@@ -54,21 +83,30 @@ class LabelHistoryProcessor:
         # print(f"step is {step}")
 
         changes = {}
-        for coords, old_labels, new_label in step:
+
+        def extend_changes(label, area, xs, ys):
+            if label in changes:
+                changes[label].area_diff += factor * area
+                changes[label].xs = np.concatenate((changes[label].xs, xs))
+                changes[label].ys = np.concatenate((changes[label].ys, ys))
+            else:
+                changes[label] = ChangeRecord(factor * area, xs, ys)
+
+        for (xs, ys), old_labels, new_label in step:
             removed_labels, removed_labels_area = np.unique(
                 old_labels, return_counts=True
             )
 
+            total_removed_area = 0
             for label, area in zip(removed_labels, removed_labels_area):
-                if label in changes:
-                    changes[label] += -factor * area
-                else:
-                    changes[label] = -factor * area
+                extend_changes(
+                    label,
+                    -area,
+                    xs[total_removed_area : total_removed_area + area],
+                    ys[total_removed_area : total_removed_area + area],
+                )
+                total_removed_area += area
 
-            if new_label in changes:
-                changes[new_label] += factor * np.sum(removed_labels_area)
-            else:
-                changes[new_label] = factor * np.sum(removed_labels_area)
-            # print(f"dict at the current substep: {changes}")
+            extend_changes(new_label, total_removed_area, xs, ys)
 
         return changes

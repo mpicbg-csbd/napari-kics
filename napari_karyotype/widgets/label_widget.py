@@ -125,25 +125,41 @@ class LabelWidget(QVBoxLayout):
 
         print(f"recent_changes is {recent_changes}")
 
-        for (label, increment) in recent_changes.items():
-
+        for (label, change) in recent_changes.items():
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
                 self.table.model().dataframe = self.table.model().dataframe.append(
-                    # pd.DataFrame([["", label, increment]], index=[label]))
                     pd.DataFrame(
-                        [["", label, increment]],
-                        columns=["color", "label", "area"],
+                        [["", label, change.area_diff, change.coord(), change.bbox()]],
+                        columns=["color", "label", "area", "_coord", "_bbox"],
                         index=[label],
                     )
                 )
                 print(f"now it is \n{self.table.model().dataframe}")
 
-            else:
-                self.table.model().dataframe.loc[label, "area"] += increment
+            elif change.area_diff != 0:
+                self.table.model().dataframe.loc[label, "area"] += change.area_diff
 
-                if self.table.model().dataframe.loc[label, "area"] == 0:
+                if change.area_diff > 0:
+                    # label area was extended
+                    self.table.model().dataframe.at[label, "_bbox"] = change.bbox(
+                        self.table.model().dataframe.loc[label, "_bbox"]
+                    )
+
+                elif self.table.model().dataframe.at[label, "area"] > 0:
+                    # label area was reduced but still exists
+                    new_coords = np.argwhere(self.label_layer.data == label)
+                    new_bbox = (
+                        *np.amin(new_coords, axis=0),
+                        *np.amax(new_coords, axis=0),
+                    )
+
+                    self.table.model().dataframe.at[label, "_coord"] = new_coords[0]
+                    self.table.model().dataframe.at[label, "_bbox"] = new_bbox
+                else:
+                    # label area was reduced completely
                     self.table.model().dataframe.drop(label, inplace=True)
-                    print(f"label {label} is set to 0")
+                    print(f"label {label} was removed")
+
             self.table.update()
             self.table.sortByColumn(2, Qt.DescendingOrder)
