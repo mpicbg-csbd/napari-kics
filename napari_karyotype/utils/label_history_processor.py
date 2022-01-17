@@ -42,26 +42,43 @@ class LabelHistoryProcessor:
         # print(f"[recent_changes]: undo history is {self.label_layer._undo_history}")
         # print(f"[recent_changes]: redo history is {self.label_layer._redo_history}")
 
-        # apparently, undo and redo history get erased upon the layer visibility toggle
-        # first clause is to account for that, should refactor the entire "if" later on
         if (
             len(self.label_layer._undo_history) == 0
             and len(self.label_layer._redo_history) == 0
         ):
+            # no undo/redo history...
+            #
+            # NOTE: apparently, undo and redo history get erased upon
+            #       the layer visibility toggle
             self.history_queue_length = 0
             self.history_last_step_length = 0
+
             return {}
 
         elif len(self.label_layer._undo_history) > self.history_queue_length:
+            # new actions were taken, i.e. undoable actions accumulated...
             factor = +1
-            step = self.label_layer._undo_history[-1]
+
+            # collect new actions since last processsing
+            step = list()
+            for i in range(
+                self.history_queue_length, len(self.label_layer._undo_history)
+            ):
+                step.extend(self.label_layer._undo_history[i])
+
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = len(step)
-            # print(f"self history last step length is {self.history_last_step_length}")
 
         elif len(self.label_layer._undo_history) < self.history_queue_length:
+            # actions were undone, i.e. redoable actions accumulated...
             factor = -1
-            step = self.label_layer._redo_history[-1]
+
+            # collect undone actions since last processsing
+            nsteps = self.history_queue_length - len(self.label_layer._undo_history)
+            nredo = len(self.label_layer._redo_history)
+            step = list()
+            for i in range(nredo):
+                step.extend(self.label_layer._redo_history[nsteps - i - 1])
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = 0
 
@@ -69,18 +86,22 @@ class LabelHistoryProcessor:
             len(self.label_layer._undo_history) != 0
             and len(self.label_layer._undo_history[-1]) > self.history_last_step_length
         ):
+            # partially new actions were taken, i.e. the last undo step
+            # accumulated more undoable actions
             factor = +1
-            step_ = self.label_layer._undo_history[-1]
-            new_length = len(step_)
-            step = step_[self.history_last_step_length : new_length]
+
+            # collect partially new actions
+            step = self.label_layer._undo_history[-1]
+            new_length = len(step)
+            step = step[self.history_last_step_length : new_length]
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = new_length
-            # print(f"self history last step length is {self.history_last_step_length}")
 
         else:
+            # all actions are accounted for, i.e. nothing to do
             return {}
 
-        # print(f"step is {step}")
+        print(f"[recent_changes] found {len(step)} steps")
 
         changes = {}
 
