@@ -10,6 +10,9 @@ import logging
 log = logging.getLogger(__name__)
 
 
+ReturnType = namedtuple("ReturnType", ["matching"])
+
+
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
     # TODO show tooltip on hover with scaff/estimate name/index, size diff, abs. sizes, ...
 
@@ -23,6 +26,8 @@ def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
 
     fix_initial_scaling_of_matrix_view(main_window)
     app.exec_()
+
+    return ReturnType(main_window.matching_dataframe())
 
 
 def fix_initial_scaling_of_matrix_view(main_window):
@@ -160,6 +165,9 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.registerKeyboardAction(
             QtGui.QKeySequence.Print, self.export, "Export current plots as SVG"
+        )
+        self.registerKeyboardAction(
+            QtGui.QKeySequence.Save, self.save, "Save selected matching to file"
         )
         self.registerKeyboardAction(
             QtCore.Qt.Key.Key_T,
@@ -613,6 +621,26 @@ class MainWindow(QtWidgets.QMainWindow):
         exporter = SVGExporter(self.centralWidget().scene(), parent=self)
         exporter.export()
         self._hideCrossHair(hide=False)
+
+    def matching_dataframe(self):
+        return pd.DataFrame(
+            {
+                "chromosome": self.estimates.index[self.matching[:, 1]],
+                "scaffold": self.scaffoldSizes.index[self.matching[:, 0]],
+            }
+        )
+
+    def save(self):
+        fileDialog = pg.FileDialog(self)
+        fileDialog.setFileMode(QtWidgets.QFileDialog.FileMode.AnyFile)
+        fileDialog.setAcceptMode(QtWidgets.QFileDialog.AcceptMode.AcceptSave)
+        fileDialog.setNameFilter(self.tr("Comma-separated values (*.csv)"))
+        fileDialog.accepted.connect(
+            lambda: self.matching_dataframe().to_csv(
+                fileDialog.selectedFiles()[0], index=False
+            )
+        )
+        fileDialog.exec_()
 
     helpBaseTemplate = """\
 <table>

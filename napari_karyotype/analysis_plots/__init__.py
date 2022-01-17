@@ -89,7 +89,7 @@ def analysis_plots(
     except ModuleNotFoundError:
         raise ValueError(f"Unrecognized plotlib: {plotlib}")
 
-    plot_backend.do_plot(estimates, scaffold_sizes, matching)
+    return plot_backend.do_plot(estimates, scaffold_sizes, matching)
 
 
 def get_argument_parser():
