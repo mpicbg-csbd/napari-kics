@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+from qtpy import QtCore
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
 from napari_karyotype.utils import get_img, guess_chromosome_labels, ChromosomeLabel
 from math import hypot
@@ -7,8 +8,9 @@ from skimage.measure import regionprops
 
 
 class OrderWidget(QVBoxLayout):
-    def __init__(self, viewer, table):
+    sigOrderChanged = QtCore.Signal()
 
+    def __init__(self, viewer, table):
         super().__init__()
 
         # basic state
@@ -63,6 +65,7 @@ class OrderWidget(QVBoxLayout):
         for img_label, chr_label in zip(img_labels, chr_labels):
             region_table.at[img_label, "label"] = chr_label
         self.table.update()
+        self.sigOrderChanged.emit()
         print("[guess_chromosome_labels]: sucess")
 
     def order_drag_callback(self, label_layer, event):
@@ -219,6 +222,7 @@ class OrderWidget(QVBoxLayout):
         self.order = []
         self.order_new = []
         self.table.update()
+        self.sigOrderChanged.emit()
 
     def toggle_ordering_mode(self, flag):
 

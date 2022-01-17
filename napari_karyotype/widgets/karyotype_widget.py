@@ -56,7 +56,8 @@ class KaryotypeContentWidget(QWidget):
         self.layout.addLayout(self.label_widget)
 
         # ordering
-        self.order_widget = OrderWidget(self.viewer, self.label_widget.table)
+        self.order_widget = OrderWidget(self, self.viewer, self.label_widget.table)
+        self.order_widget.sigOrderChanged.connect(self.annotate)
         self.layout.addLayout(self.order_widget)
 
         # annotation
