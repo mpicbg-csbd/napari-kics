@@ -94,9 +94,10 @@ class LabelWidget(QVBoxLayout):
 
         def sync_selection_table2viewer(e):
             indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-            self.label_layer.selected_label = self.table.model().dataframe.index[
-                indices[0]
-            ]
+            if len(indices) > 0:
+                self.label_layer.selected_label = self.table.model().dataframe.index[
+                    indices[0]
+                ]
 
         self.table.clicked.connect(sync_selection_table2viewer)
 
