@@ -109,15 +109,25 @@ class LabelWidget(QVBoxLayout):
 
         self.label_layer.events.selected_label.connect(sync_selection_viewer2table)
 
-    def delete_selected_labels(self, e):
+    def delete_selected_labels(self, e, *, new_label=0):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-        coords = self.table.model().dataframe.iloc[indices].loc[:, "_coord"]
+        labels = self.table.model().dataframe.index[indices]
 
         print(f"[backspace]: removing indices {indices}")
-        print(f"[backspace]: coords list is {coords}")
 
-        for coord in coords:
-            self.label_layer.fill(coord, 0)
+        matches = self.label_layer.data == labels[0]
+        for label in labels[1:]:
+            matches |= self.label_layer.data == label
+        match_indices = np.nonzero(matches)
+        self.label_layer._save_history(
+            (
+                match_indices,
+                np.array(self.label_layer.data[match_indices], copy=True),
+                new_label,
+            )
+        )
+        self.label_layer.data[match_indices] = new_label
+        self.label_layer.refresh()
 
     def update_table(self):
 
