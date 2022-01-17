@@ -5,6 +5,7 @@ from qtpy.QtGui import QBrush, QColor
 
 # based on https://www.pythonguis.com/faq/editing-pyqt-tableview/
 class PandasTableModel(QtCore.QAbstractTableModel):
+    sigChange = QtCore.Signal(int, int, object, object)
 
     # def __init__(self, pandas_dataframe, colors):
     def __init__(self, pandas_dataframe, get_color):
@@ -56,7 +57,6 @@ class PandasTableModel(QtCore.QAbstractTableModel):
         )
 
     def headerData(self, p_int, Qt_Orientation, role=None):
-
         if role == QtCore.Qt.DisplayRole:
             if Qt_Orientation == QtCore.Qt.Horizontal:
                 return self.dataframe.columns[self._dataIndex(p_int)]
@@ -65,7 +65,11 @@ class PandasTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role):
         if role == QtCore.Qt.EditRole:
-            self.dataframe.iloc[index.row(), self._dataIndex(index.column())] = value
+            old_value = self.dataframe.iat[index.row(), self._dataIndex(index.column())]
+            self.dataframe.iat[index.row(), self._dataIndex(index.column())] = value
+            self.sigChange.emit(
+                index.row(), self._dataIndex(index.column()), old_value, value
+            )
             return True
         return False
 
