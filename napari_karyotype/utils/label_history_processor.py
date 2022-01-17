@@ -29,6 +29,12 @@ class ChangeRecord:
                 max(_bbox[3], bbox[3]),
             )
 
+    def __str__(self):
+        return f"ChangeRecord(area_diff={self.area_diff},xs=<{len(self.xs)} elements>,ys=<{len(self.ys)} elements>)"
+
+    def __repr__(self):
+        return str(self)
+
 
 class LabelHistoryProcessor:
     def __init__(self, label_layer):
@@ -38,7 +44,7 @@ class LabelHistoryProcessor:
         self.history_last_step_length = 0
 
     def recent_changes(self):
-        # print(f"[recent_changes]: entry")
+        print(f"[recent_changes]: entry")
         # print(f"[recent_changes]: undo history is {self.label_layer._undo_history}")
         # print(f"[recent_changes]: redo history is {self.label_layer._redo_history}")
 
@@ -101,7 +107,7 @@ class LabelHistoryProcessor:
             # all actions are accounted for, i.e. nothing to do
             return {}
 
-        print(f"[recent_changes] found {len(step)} steps")
+        print(f"[recent_changes] found {len(step)} steps: {step}")
 
         changes = {}
 
@@ -129,5 +135,7 @@ class LabelHistoryProcessor:
                 total_removed_area += area
 
             extend_changes(new_label, total_removed_area, xs, ys)
+
+        print(f"[recent_changes] changes since last call: {changes}")
 
         return changes
