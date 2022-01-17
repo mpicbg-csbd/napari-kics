@@ -50,6 +50,9 @@ class KaryotypeContentWidget(QWidget):
 
         # labelling
         self.label_widget = LabelWidget(self.viewer)
+        self.label_widget.table.model().sigChange.connect(
+            lambda row, col, old, new: self.annotate(update_only=True)
+        )
         self.layout.addLayout(self.label_widget)
 
         # ordering
