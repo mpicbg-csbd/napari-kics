@@ -13,3 +13,14 @@ def get_img(name, viewer):
             f"[get_img]: Failed to retrieve the image with the name {name}. "
             f"Make sure the requested data is properly imported/generated and repeat the operation."
         )
+
+
+def bbox2shape(bbox):
+    return np.array(
+        [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[1]],
+            [bbox[2], bbox[3]],
+            [bbox[0], bbox[3]],
+        ]
+    )
