@@ -146,7 +146,7 @@ class AnalysisWidget(QVBoxLayout):
         self.estimates /= sum(self.estimates)
         self.estimates *= sum(self.scaffold_sizes)
 
-        analysis_plots(
+        self.analysis_result = analysis_plots(
             self.scaffold_sizes,
             self.estimates,
             min_scaffold_size=10_000,

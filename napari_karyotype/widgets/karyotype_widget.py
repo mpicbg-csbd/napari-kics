@@ -64,5 +64,7 @@ class KaryotypeContentWidget(QWidget):
         self.layout.addLayout(self.analysis_widget)
 
         # saving
-        self.saving_widget = SavingWidget(self.viewer, self.label_widget.table)
+        self.saving_widget = SavingWidget(
+            self.viewer, self.label_widget.table, self.analysis_widget
+        )
         self.layout.addLayout(self.saving_widget)

@@ -7,11 +7,12 @@ from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 
 
 class SavingWidget(QVBoxLayout):
-    def __init__(self, viewer, table):
+    def __init__(self, viewer, table, analysis_widget):
         super().__init__()
 
         self.viewer = viewer
         self.table = table
+        self.analysis_widget = analysis_widget
 
         self.save_path_line_edit = ClickableLineEdit(
             placeholderText="Select output directory", mode="directory"
@@ -45,6 +46,12 @@ class SavingWidget(QVBoxLayout):
         dataframe["labels"] = list(self.table.model().dataframe.index)
         dataframe["area"] = list(self.table.model().dataframe["area"])
         dataframe.to_csv(f"{path}/data.csv", index=False)
+
+        # matching after anaylsis
+        if hasattr(self.analysis_widget.analysis_result, "matching"):
+            self.analysis_widget.analysis_result.matching.to_csv(
+                f"{path}/matching.csv", index=False
+            )
 
         # screenshot
         self.viewer.screenshot(f"{path}/screenshot.png")
