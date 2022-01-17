@@ -10,8 +10,11 @@ class PandasTableModel(QtCore.QAbstractTableModel):
     def __init__(self, pandas_dataframe, get_color):
         super().__init__()
 
-        self.dataframe = pandas_dataframe
+        self.setDataframe(pandas_dataframe)
         self.get_color = get_color
+
+    def setDataframe(self, pandas_dataframe):
+        self.dataframe = pandas_dataframe
         self._visIndex = [
             i if not col.startswith("_") else -1
             for i, col in enumerate(self.dataframe.columns)

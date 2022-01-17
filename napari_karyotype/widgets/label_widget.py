@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QLabel,
 )
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QBrush
 
 import numpy as np
 import pandas as pd
@@ -42,7 +43,7 @@ class LabelWidget(QVBoxLayout):
                 self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
 
             self.label_layer = get_img("labelled", self.viewer)
-            self.label_manager = LabelHistoryProcessor(get_img("labelled", self.viewer))
+            self.label_manager = LabelHistoryProcessor(self.label_layer)
             self.generate_table()
             self.label_layer.events.set_data.connect(lambda x: self.update_table())
 
@@ -68,7 +69,14 @@ class LabelWidget(QVBoxLayout):
         dummy_frame["2"] = [""] * 10
         dummy_frame.columns = ["color", "label", "area"]
 
-        self.table.setModel(PandasTableModel(dummy_frame, lambda x: None))
+        self.table.setModel(
+            PandasTableModel(
+                dummy_frame,
+                lambda x: self.label_layer.get_color(x)
+                if hasattr(self, "label_layer")
+                else None,
+            )
+        )
         self.table.setDisabled(True)
 
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
@@ -83,12 +91,11 @@ class LabelWidget(QVBoxLayout):
             dtype=object,
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
-        # l = [("", res[ind, 0], res[ind, 1]) for ind in range(len(res))]
         l = [("", str(row[0]), row[1], *row[2:]) for row in res]
 
         frame = pd.DataFrame(l)
         frame.columns = ["color", "label", "area", "_coord", "_bbox"]
-        self.table.setModel(PandasTableModel(frame, self.label_layer.get_color))
+        self.table.model().setDataframe(frame)
         self.table.sortByColumn(2, Qt.DescendingOrder)
         self.table.setDisabled(False)
 
@@ -131,10 +138,8 @@ class LabelWidget(QVBoxLayout):
         self.label_layer.refresh()
 
     def update_table(self):
-
         recent_changes = self.label_manager.recent_changes()
-
-        print(f"recent_changes is {recent_changes}")
+        print(f"[update_table] recent_changes is {recent_changes}")
 
         for (label, change) in recent_changes.items():
             if not (label in self.table.model().dataframe.index):
