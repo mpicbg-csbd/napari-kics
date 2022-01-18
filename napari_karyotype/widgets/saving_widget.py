@@ -2,6 +2,7 @@ from skimage import io
 import pandas as pd
 
 from napari_karyotype.widgets import ClickableLineEdit
+from napari_karyotype.utils.export_annotated_karyotype import export_svg
 from pathlib import Path
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 
@@ -67,4 +68,21 @@ class SavingWidget(QVBoxLayout):
         # screenshot
         self.viewer.screenshot(f"{path}/screenshot.png")
 
+        # properly annotated karyotype
+        anno_tags = self.table.model().dataframe["label"].to_list()
+        anno_sizes = self.table.model().dataframe["area"].to_list()
+        anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
+
+        # do not annotate background
+        bg_index = self.table.model().dataframe.index.to_list().index(0)
+        del anno_tags[bg_index]
+        del anno_sizes[bg_index]
+        del anno_bboxes[bg_index]
+
+        export_svg(
+            f"{path}/annotated.svg",
+            karyotype=self.viewer.layers[0].data,
+            tags=anno_tags,
+            sizes=anno_sizes,
+            bboxes=anno_bboxes,
         )
