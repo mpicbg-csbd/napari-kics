@@ -36,6 +36,8 @@ class SavingWidget(QVBoxLayout):
 
     def save_output(self, path):
         # images
+        if len(path) == 0:
+            path = "."
 
         imgs_dict = self.get_imgs_dict()
         [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
