@@ -34,6 +34,10 @@ class ClickableLineEdit(QLineEdit):
         self.options = options
 
     def mousePressEvent(self, event):
+        self.showDialog()
+        super().mousePressEvent(event)
+
+    def showDialog(self):
         text = None
 
         if self.mode == "directory":
@@ -70,8 +74,6 @@ class ClickableLineEdit(QLineEdit):
             self.setText(text)
             self.dir = os.path.basename(text)
             self.sigAccepted.emit(text)
-
-        super().mousePressEvent(event)
 
     def setText(self, text):
         self.dir = os.path.basename(text)

@@ -21,9 +21,13 @@ class SavingWidget(QVBoxLayout):
 
         self.save_btn = QPushButton("Save")
         self.save_btn.clicked.connect(
+            lambda x: self.save_path_line_edit.showDialog()
+            if self.save_path_line_edit.text() == ""
+            else None
+        )
+        self.save_btn.clicked.connect(
             lambda x: print(f"path is {self.save_path_line_edit.text()}")
         )
-
         self.save_btn.clicked.connect(
             lambda e: self.save_output(self.save_path_line_edit.text())
         )
