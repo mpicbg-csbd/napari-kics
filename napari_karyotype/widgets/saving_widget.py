@@ -35,12 +35,19 @@ class SavingWidget(QVBoxLayout):
         self.setSpacing(5)
 
     def save_output(self, path):
-        # images
         if len(path) == 0:
             path = "."
 
-        imgs_dict = self.get_imgs_dict()
-        [io.imsave(f"{path}/{name}.png", img) for (name, img) in imgs_dict.items()]
+        # images
+        for name in ("blurred", "thresholded", "labelled"):
+            img = self.viewer.layers[name].data
+            io.imsave(f"{path}/{name}.png", img)
+        io.imsave(
+            f"{path}/labelled_color.png",
+            self.viewer.layers["labelled"].get_color(
+                list(self.viewer.layers["labelled"].data)
+            ),
+        )
 
         # dataframe
         dataframe = pd.DataFrame()
@@ -60,15 +67,4 @@ class SavingWidget(QVBoxLayout):
         # screenshot
         self.viewer.screenshot(f"{path}/screenshot.png")
 
-    def get_imgs_dict(self):
-        res = {}
-        names = [layer.name for layer in self.viewer.layers]
-        res["blurred"] = self.viewer.layers[names.index("blurred")].data
-        res["thresholded"] = self.viewer.layers[names.index("thresholded")].data
-        res["labelled"] = self.viewer.layers[names.index("labelled")].data
-
-        res["labelled_color"] = self.viewer.layers[names.index("labelled")].get_color(
-            list(res["labelled"])
         )
-
-        return res
