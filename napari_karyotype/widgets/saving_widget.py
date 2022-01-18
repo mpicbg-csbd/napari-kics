@@ -50,7 +50,9 @@ class SavingWidget(QVBoxLayout):
         dataframe.to_csv(f"{path}/data.csv", index=False)
 
         # matching after anaylsis
-        if hasattr(self.analysis_widget.analysis_result, "matching"):
+        if hasattr(self.analysis_widget, "analysis_result") and hasattr(
+            self.analysis_widget.analysis_result, "matching"
+        ):
             self.analysis_widget.analysis_result.matching.to_csv(
                 f"{path}/matching.csv", index=False
             )
