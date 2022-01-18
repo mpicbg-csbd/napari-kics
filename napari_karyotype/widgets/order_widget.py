@@ -69,7 +69,6 @@ class OrderWidget(QVBoxLayout):
         print("[guess_chromosome_labels]: sucess")
 
     def order_drag_callback(self, label_layer, event):
-
         """label layer drag callback to remove the labels that have been crossed-out (added to the self.order list)"""
 
         print(f"[drag_callback]: drag started")
@@ -117,7 +116,6 @@ class OrderWidget(QVBoxLayout):
             self.order_new.append(curr_order)
 
     def parse_recent_step(self, label_layer):
-
         """a function to parse the recent history step to extract the recent changes in the label layer"""
 
         print(f"parse recent step")
@@ -158,7 +156,6 @@ class OrderWidget(QVBoxLayout):
         print(f"order_new: {self.order_new}")
 
     def activate_ordering_mode(self):
-
         """create the new label layer and allow relabelling"""
 
         self.label_layer = get_img("labelled", self.viewer)
@@ -182,7 +179,6 @@ class OrderWidget(QVBoxLayout):
         )
 
     def deactivate_ordering_mode(self):
-
         """remove the auxiliary layer and update the current labels according to the generated relabeling"""
 
         # delete the auxiliary ordering layer
@@ -197,15 +193,7 @@ class OrderWidget(QVBoxLayout):
         print(f"order is {self.order}")
 
         if len(self.order) > 0:
-
             print("relabelling")
-            # for ind, label in enumerate(self.order):
-            #     self.table.model().dataframe.at[label, "label"] = ind + 1
-            #
-            # unprocessed_labels = set(list(self.table.model().dataframe.index)) - set(self.order) - {0}
-
-            import string
-
             for ind, label_list in enumerate(self.order_new):
                 for subind, label in enumerate(label_list):
                     self.table.model().dataframe.at[label, "label"] = ChromosomeLabel(
@@ -225,7 +213,6 @@ class OrderWidget(QVBoxLayout):
         self.sigOrderChanged.emit()
 
     def toggle_ordering_mode(self, flag):
-
         """switch between the modes"""
 
         if flag:
