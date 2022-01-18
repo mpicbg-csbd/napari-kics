@@ -17,7 +17,7 @@ class BlurWidget(QVBoxLayout):
 
             if len(input_image.shape) == 3 and input_image.shape[-1] == 4:
                 img = rgb2gray(rgba2rgb(input_image))
-            if len(input_image.shape) == 3 and input_image.shape[-1] == 3:
+            elif len(input_image.shape) == 3 and input_image.shape[-1] == 3:
                 img = rgb2gray(input_image)
             elif (len(input_image.shape) == 3 and input_image.shape[-1] == 1) or (
                 len(input_image.shape) == 2
@@ -25,7 +25,7 @@ class BlurWidget(QVBoxLayout):
                 img = input_image
             else:
                 raise Exception(
-                    f"Cannot process image with type f{input_image.dtype} and shape {input_image.shape}."
+                    f"Cannot process image with type {input_image.dtype} and shape {input_image.shape}."
                 )
 
             from skimage.filters import gaussian
