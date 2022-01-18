@@ -209,7 +209,7 @@ class OrderWidget(QVBoxLayout):
             for ind, label_list in enumerate(self.order_new):
                 for subind, label in enumerate(label_list):
                     self.table.model().dataframe.at[label, "label"] = ChromosomeLabel(
-                        ind, subind, None, None
+                        ind + 1, subind, None, None
                     )
 
             unprocessed_labels = (
