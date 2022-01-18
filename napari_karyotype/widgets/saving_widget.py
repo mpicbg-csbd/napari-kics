@@ -39,7 +39,13 @@ class SavingWidget(QVBoxLayout):
         if len(path) == 0:
             path = "."
 
-        # images
+        self._save_images(path)
+        self._save_table(path)
+        self._save_matching(path)
+        self._save_screenshot(path)
+        self._save_annotated_karyotype(path)
+
+    def _save_images(self, path):
         for name in ("blurred", "thresholded", "labelled"):
             img = self.viewer.layers[name].data
             io.imsave(f"{path}/{name}.png", img)
@@ -50,14 +56,14 @@ class SavingWidget(QVBoxLayout):
             ),
         )
 
-        # dataframe
-        dataframe = pd.DataFrame()
-        dataframe["tags"] = list(self.table.model().dataframe["label"])
-        dataframe["labels"] = list(self.table.model().dataframe.index)
-        dataframe["area"] = list(self.table.model().dataframe["area"])
-        dataframe.to_csv(f"{path}/data.csv", index=False)
+    def _save_table(self, path):
+        table = pd.DataFrame()
+        table["tags"] = list(self.table.model().dataframe["label"])
+        table["labels"] = list(self.table.model().dataframe.index)
+        table["area"] = list(self.table.model().dataframe["area"])
+        table.to_csv(f"{path}/data.csv", index=False)
 
-        # matching after anaylsis
+    def _save_matching(self, path):
         if hasattr(self.analysis_widget, "analysis_result") and hasattr(
             self.analysis_widget.analysis_result, "matching"
         ):
@@ -65,10 +71,10 @@ class SavingWidget(QVBoxLayout):
                 f"{path}/matching.csv", index=False
             )
 
-        # screenshot
+    def _save_screenshot(self, path):
         self.viewer.screenshot(f"{path}/screenshot.png")
 
-        # properly annotated karyotype
+    def _save_annotated_karyotype(self, path):
         anno_tags = self.table.model().dataframe["label"].to_list()
         anno_sizes = self.table.model().dataframe["area"].to_list()
         anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
