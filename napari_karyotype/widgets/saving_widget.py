@@ -47,21 +47,25 @@ class SavingWidget(QVBoxLayout):
 
     def _save_images(self, path):
         for name in ("blurred", "thresholded", "labelled"):
-            img = self.viewer.layers[name].data
-            io.imsave(f"{path}/{name}.png", img)
-        io.imsave(
-            f"{path}/labelled_color.png",
-            self.viewer.layers["labelled"].get_color(
-                list(self.viewer.layers["labelled"].data)
-            ),
-        )
+            if name in self.viewer.layers:
+                img = self.viewer.layers[name].data
+                io.imsave(f"{path}/{name}.png", img)
+
+        if "labelled" in self.viewer.layers:
+            io.imsave(
+                f"{path}/labelled_color.png",
+                self.viewer.layers["labelled"].get_color(
+                    list(self.viewer.layers["labelled"].data)
+                ),
+            )
 
     def _save_table(self, path):
-        table = pd.DataFrame()
-        table["tags"] = list(self.table.model().dataframe["label"])
-        table["labels"] = list(self.table.model().dataframe.index)
-        table["area"] = list(self.table.model().dataframe["area"])
-        table.to_csv(f"{path}/data.csv", index=False)
+        if self.table.isEnabled():
+            table = pd.DataFrame()
+            table["tags"] = list(self.table.model().dataframe["label"])
+            table["labels"] = list(self.table.model().dataframe.index)
+            table["area"] = list(self.table.model().dataframe["area"])
+            table.to_csv(f"{path}/data.csv", index=False)
 
     def _save_matching(self, path):
         if hasattr(self.analysis_widget, "analysis_result") and hasattr(
@@ -75,20 +79,21 @@ class SavingWidget(QVBoxLayout):
         self.viewer.screenshot(f"{path}/screenshot.png")
 
     def _save_annotated_karyotype(self, path):
-        anno_tags = self.table.model().dataframe["label"].to_list()
-        anno_sizes = self.table.model().dataframe["area"].to_list()
-        anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
+        if self.table.isEnabled():
+            anno_tags = self.table.model().dataframe["label"].to_list()
+            anno_sizes = self.table.model().dataframe["area"].to_list()
+            anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
 
-        # do not annotate background
-        bg_index = self.table.model().dataframe.index.to_list().index(0)
-        del anno_tags[bg_index]
-        del anno_sizes[bg_index]
-        del anno_bboxes[bg_index]
+            # do not annotate background
+            bg_index = self.table.model().dataframe.index.to_list().index(0)
+            del anno_tags[bg_index]
+            del anno_sizes[bg_index]
+            del anno_bboxes[bg_index]
 
-        export_svg(
-            f"{path}/annotated.svg",
-            karyotype=self.viewer.layers[0].data,
-            tags=anno_tags,
-            sizes=anno_sizes,
-            bboxes=anno_bboxes,
-        )
+            export_svg(
+                f"{path}/annotated.svg",
+                karyotype=self.viewer.layers[0].data,
+                tags=anno_tags,
+                sizes=anno_sizes,
+                bboxes=anno_bboxes,
+            )
