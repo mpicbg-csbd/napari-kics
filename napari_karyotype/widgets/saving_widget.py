@@ -76,10 +76,6 @@ class SavingWidget(QVBoxLayout):
             table["label"] = self.table.model().dataframe.index.to_list()
             table["area"] = self.table.model().dataframe["area"].to_list()
 
-            # do not annotate background
-            bg_index = self.table.model().dataframe.index.to_list().index(0)
-            table.drop(index=bg_index, inplace=True)
-
             table.to_csv(f"{path}/data.csv", index=False)
 
     def _save_matching(self, path):
@@ -98,12 +94,6 @@ class SavingWidget(QVBoxLayout):
             anno_tags = self.table.model().dataframe["label"].to_list()
             anno_sizes = self.table.model().dataframe["area"].to_list()
             anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
-
-            # do not annotate background
-            bg_index = self.table.model().dataframe.index.to_list().index(0)
-            del anno_tags[bg_index]
-            del anno_sizes[bg_index]
-            del anno_bboxes[bg_index]
 
             export_svg(
                 f"{path}/annotated.svg",

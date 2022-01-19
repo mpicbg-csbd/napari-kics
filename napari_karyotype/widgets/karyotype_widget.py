@@ -90,12 +90,6 @@ class KaryotypeContentWidget(QWidget):
         areas = [str(a) for a in table.loc[:, "area"]]
         bboxes = [bbox2shape(b) for b in table.loc[:, "_bbox"]]
 
-        # do not annotate background
-        bg_index = table.index.to_list().index(0)
-        del labels[bg_index]
-        del areas[bg_index]
-        del bboxes[bg_index]
-
         print(
             f"[annotate] bboxes, labels and areas have lengths {len(bboxes), len(labels), len(areas)}"
         )

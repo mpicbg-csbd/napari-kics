@@ -84,10 +84,10 @@ class LabelWidget(QVBoxLayout):
         self.addWidget(self.table)
 
     def generate_table(self):
-        rp = regionprops(self.label_layer.data + 1)
+        rp = regionprops(self.label_layer.data)
 
         res = np.array(
-            [(r.label - 1, r.area, r.coords[0], r.bbox) for r in rp],
+            [(r.label, r.area, r.coords[0], r.bbox) for r in rp],
             dtype=object,
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
@@ -95,6 +95,7 @@ class LabelWidget(QVBoxLayout):
 
         frame = pd.DataFrame(l)
         frame.columns = ["color", "label", "area", "_coord", "_bbox"]
+        frame.index = (row[0] for row in res)
         self.table.model().setDataframe(frame)
         self.table.sortByColumn(2, Qt.DescendingOrder)
         self.table.setDisabled(False)
@@ -142,6 +143,10 @@ class LabelWidget(QVBoxLayout):
         print(f"[update_table] recent_changes is {recent_changes}")
 
         for (label, change) in recent_changes.items():
+            if label == 0:
+                # ignore background label
+                continue
+
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
                 self.table.model().dataframe = self.table.model().dataframe.append(
