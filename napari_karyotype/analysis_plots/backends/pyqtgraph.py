@@ -556,10 +556,11 @@ class MainWindow(QtWidgets.QMainWindow):
             showValues=(True, False, False, True),
             size=(self.matrixAxisLabelSize[0], None),
         )
+        for axis in ("top", "bottom"):
+            self.directComparisonPlotItem.getAxis(axis).setTickSpacing(1, 1)
         yAxis = self.directComparisonPlotItem.getAxis("left")
         yAxis.enableAutoSIPrefix(False)
         yAxis.setLabel("Size", "bp")
-        yAxis.setLogMode(True)
         self.directComparisonPlotItem.showGrid(y=True)
 
         self.directComparisonLegendItem = self.centralWidget().addViewBox(
@@ -576,8 +577,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.chromosomeBarsItem = pg.BarGraphItem(
             x=self.chrIndices - self.barWidth / 2,
-            y0=np.log10(np.ones_like(self.estimates)),
-            height=np.log10(self.estimates),
+            y0=np.ones_like(self.estimates),
+            height=self.estimates,
             width=self.barWidth,
         )
         self.scaffoldBarsItem = pg.BarGraphItem(x=[], height=[], width=self.barWidth)
@@ -791,13 +792,13 @@ class MainWindow(QtWidgets.QMainWindow):
         # update selection per scaffold plot
         self.scaffoldBarsItem.setOpts(
             x=xs + self.barWidth / 2,
-            y0=np.log10(y0s),
-            height=np.log10(y1s) - np.log10(y0s),
+            y0=y0s,
+            height=y1s - y0s,
         )
 
         self.directComparisonPlotItem.setYRange(
-            np.min(np.log10(y1s)),
-            np.max(np.log10(y1s)),
+            np.min(y1s),
+            np.max(y1s),
         )
 
 
