@@ -66,9 +66,14 @@ class SavingWidget(QVBoxLayout):
     def _save_table(self, path):
         if self.table.isEnabled():
             table = pd.DataFrame()
-            table["tags"] = list(self.table.model().dataframe["label"])
-            table["labels"] = list(self.table.model().dataframe.index)
-            table["area"] = list(self.table.model().dataframe["area"])
+            table["tag"] = self.table.model().dataframe["label"].to_list()
+            table["label"] = self.table.model().dataframe.index.to_list()
+            table["area"] = self.table.model().dataframe["area"].to_list()
+
+            # do not annotate background
+            bg_index = self.table.model().dataframe.index.to_list().index(0)
+            table.drop(index=bg_index, inplace=True)
+
             table.to_csv(f"{path}/data.csv", index=False)
 
     def _save_matching(self, path):
