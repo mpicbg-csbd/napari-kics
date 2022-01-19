@@ -5,6 +5,7 @@ from napari_karyotype.widgets import ClickableLineEdit
 from napari_karyotype.utils.export_annotated_karyotype import export_svg
 from pathlib import Path
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
+from napari.utils import progress
 
 
 class SavingWidget(QVBoxLayout):
@@ -43,11 +44,16 @@ class SavingWidget(QVBoxLayout):
         if len(path) == 0:
             path = "."
 
-        self._save_images(path)
-        self._save_table(path)
-        self._save_matching(path)
-        self._save_screenshot(path)
-        self._save_annotated_karyotype(path)
+        for method in progress(
+            (
+                "_save_images",
+                "_save_table",
+                "_save_matching",
+                "_save_screenshot",
+                "_save_annotated_karyotype",
+            )
+        ):
+            getattr(self, method)(path)
 
     def _save_images(self, path):
         for name in ("blurred", "thresholded", "labelled"):
