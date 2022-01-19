@@ -44,6 +44,7 @@ class AnalysisWidget(QVBoxLayout):
         )
         signals().sampleLoaded.connect(lambda p: self.set_sample_data(p))
 
+        self.cmp_option_widgets = dict()
         self.add_cmp_option("scaffold_sizes", widget=self.scaffold_sizes_path_line_edit)
         self.add_cmp_option("unmatched_penalty", min=0.0, max=math.inf, step=0.1)
         self.add_cmp_option(
@@ -103,6 +104,7 @@ class AnalysisWidget(QVBoxLayout):
         widget.setToolTip(tooltip)
         label = self.compare_options_layout.labelForField(widget)
         label.setToolTip(tooltip)
+        self.cmp_option_widgets[prop] = widget
 
     def set_sample_data(self, data_base):
         fasta_index = f"{data_base}.fasta.fai"
@@ -149,6 +151,7 @@ class AnalysisWidget(QVBoxLayout):
         self.analysis_result = analysis_plots(
             self.scaffold_sizes,
             self.estimates,
-            min_scaffold_size=10_000,
-            max_scaffolds=2 * len(self.estimates),
+            unmatched_penalty=self.cmp_option_widgets["unmatched_penalty"].value(),
+            min_scaffold_size=self.cmp_option_widgets["min_scaffold_size"].value(),
+            max_scaffolds=self.cmp_option_widgets["max_scaffolds"].value(),
         )
