@@ -8,11 +8,12 @@ class PandasTableModel(QtCore.QAbstractTableModel):
     sigChange = QtCore.Signal(int, int, object, object)
 
     # def __init__(self, pandas_dataframe, colors):
-    def __init__(self, pandas_dataframe, get_color):
+    def __init__(self, pandas_dataframe, get_color, cell_format={}):
         super().__init__()
 
         self.setDataframe(pandas_dataframe)
         self.get_color = get_color
+        self.cell_format = cell_format
 
     def setDataframe(self, pandas_dataframe):
         self.dataframe = pandas_dataframe
@@ -36,25 +37,36 @@ class PandasTableModel(QtCore.QAbstractTableModel):
 
         return dataIndex
 
-    def data(self, QModelIndex, role=None):
+    def data(self, modelIndex=None, role=None, row=None, column=None):
+        if modelIndex is not None:
+            row = modelIndex.row()
+            column = self._dataIndex(modelIndex.column())
+        elif row is None or column is None:
+            raise ValueError("neither modelIndex nor row and column are given")
 
-        if role == QtCore.Qt.BackgroundRole and QModelIndex.column() == 0:
+        header = self.dataframe.columns[column]
 
-            color = self.get_color(self.dataframe.index[QModelIndex.row()])
+        if role == QtCore.Qt.BackgroundRole and header == "color":
+            # color column is gets the adequate background color
+            color = self.get_color(self.dataframe.index[row])
             if color is None:
                 color = np.array([0.0, 0.0, 0.0, 0.0])
             r, g, b, a = (255 * color).astype(int)
 
             return QBrush(QColor(r, g, b, alpha=a))
-
-        if role != QtCore.Qt.DisplayRole:
+        elif role is None or role == QtCore.Qt.DisplayRole:
+            # other columns are transformed to display strings
+            cell = self.dataframe.iloc[row, column]
+            fmt = self.cell_format.get(header, str)
+            if isinstance(fmt, str):
+                return fmt.format(cell)
+            elif callable(fmt):
+                return fmt(cell)
+            else:
+                raise ValueError(f"unexpected type of format: {type(fmt)}")
+        else:
+            # invisible
             return QtCore.QVariant()
-
-        return str(
-            self.dataframe.iloc[
-                QModelIndex.row(), self._dataIndex(QModelIndex.column())
-            ]
-        )
 
     def headerData(self, p_int, Qt_Orientation, role=None):
         if role == QtCore.Qt.DisplayRole:
