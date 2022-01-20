@@ -85,20 +85,25 @@ class KaryotypeContentWidget(QWidget):
         edge_width=2,
         font_size=6,
     ):
-        table = self.label_widget.table.model().dataframe
-        labels = [str(l) for l in table.loc[:, "label"]]
-        areas = [str(a) for a in table.loc[:, "area"]]
-        bboxes = [bbox2shape(b) for b in table.loc[:, "_bbox"]]
+        tableModel = self.label_widget.table.model()
+        nrows = tableModel.rowCount()
+        columns = tableModel.dataframe.columns.tolist()
+        labelCol = columns.index("label")
+        sizeCol = columns.index("size")
+
+        labels = [tableModel.data(row=i, column=labelCol) for i in range(nrows)]
+        sizes = [tableModel.data(row=i, column=sizeCol) for i in range(nrows)]
+        bboxes = [bbox2shape(b) for b in tableModel.dataframe.loc[:, "_bbox"]]
 
         print(
-            f"[annotate] bboxes, labels and areas have lengths {len(bboxes), len(labels), len(areas)}"
+            f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
         )
-        print(f"[annotate] bboxes, labels and areas are {bboxes, labels, areas}")
+        print(f"[annotate] bboxes, labels and sizes are {bboxes, labels, sizes}")
 
         # https://napari.org/tutorials/applications/annotate_segmentation.html
-        properties = {"label": labels, "area": areas}
+        properties = {"label": labels, "size": sizes}
         text_parameters = {
-            "text": "{label}: {area}",
+            "text": "{label}: {size}",
             "size": font_size,
             "color": color,
             "anchor": "upper_left",

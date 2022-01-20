@@ -75,6 +75,7 @@ class SavingWidget(QVBoxLayout):
             table["tag"] = self.table.model().dataframe["label"].to_list()
             table["label"] = self.table.model().dataframe.index.to_list()
             table["area"] = self.table.model().dataframe["area"].to_list()
+            table["size"] = self.table.model().dataframe["size"].to_list()
 
             table.to_csv(f"{path}/data.csv", index=False)
 

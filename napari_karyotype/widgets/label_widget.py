@@ -2,8 +2,10 @@ from qtpy.QtWidgets import (
     QTableView,
     QAbstractItemView,
     QPushButton,
+    QHBoxLayout,
     QVBoxLayout,
     QLabel,
+    QSpinBox,
 )
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QBrush
@@ -50,10 +52,24 @@ class LabelWidget(QVBoxLayout):
         labeling_descr_label = QLabel(
             "3. Apply label function to assign a unique integer id to each connected component:"
         )
+        self.addWidget(labeling_descr_label)
+
+        genome_size_label = QLabel("genome size:")
+
+        self.genome_size_input = QSpinBox()
+        self.genome_size_input.setRange(0, 500_000)
+        self.genome_size_input.setStepType(QSpinBox.AdaptiveDecimalStepType)
+        self.genome_size_input.setSuffix(" Mb")
+        self.genome_size_input.setSpecialValueText("undefined")
+        self.genome_size_input.valueChanged.connect(lambda _: self.update_size_column())
+        genome_size_box = QHBoxLayout()
+        genome_size_box.addWidget(genome_size_label)
+        genome_size_box.addWidget(self.genome_size_input)
+        self.addLayout(genome_size_box)
+
         label_btn = QPushButton("Label")
         label_btn.clicked.connect(lambda e: label_wrapper())
 
-        self.addWidget(labeling_descr_label)
         self.addWidget(label_btn)
         self.setSpacing(5)
 
@@ -67,7 +83,8 @@ class LabelWidget(QVBoxLayout):
         dummy_frame["0"] = [""] * 10
         dummy_frame["1"] = [""] * 10
         dummy_frame["2"] = [""] * 10
-        dummy_frame.columns = ["color", "label", "area"]
+        dummy_frame["3"] = [""] * 10
+        dummy_frame.columns = ["color", "label", "area", "size"]
 
         self.table.setModel(
             PandasTableModel(
@@ -83,6 +100,22 @@ class LabelWidget(QVBoxLayout):
 
         self.addWidget(self.table)
 
+    def update_size_column(self):
+        if not self.table.isEnabled():
+            return
+
+        gs = self.genome_size_input.value()
+        if gs == self.genome_size_input.minimum():
+            self.table.model().cell_format["size"] = "{:.2f}%"
+            gs = 100
+        else:
+            self.table.model().cell_format["size"] = "{:.1f} Mb"
+
+        total_area = sum(self.table.model().dataframe["area"])
+        self.table.model().dataframe["size"] = (
+            self.table.model().dataframe["area"] / total_area * gs
+        )
+
     def generate_table(self):
         rp = regionprops(self.label_layer.data)
 
@@ -91,12 +124,16 @@ class LabelWidget(QVBoxLayout):
             dtype=object,
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
-        l = [("", str(row[0]), row[1], *row[2:]) for row in res]
+        total_area = sum(res[:, 1])
+        l = [("", str(row[0]), row[1], 0.0, *row[2:]) for row in res]
 
         frame = pd.DataFrame(l)
-        frame.columns = ["color", "label", "area", "_coord", "_bbox"]
+        frame.columns = ["color", "label", "area", "size", "_coord", "_bbox"]
         frame.index = (row[0] for row in res)
         self.table.model().setDataframe(frame)
+        self.table.model().cell_format["area"] = "{:d}"
+        self.update_size_column()
+
         self.table.sortByColumn(2, Qt.DescendingOrder)
         self.table.setDisabled(False)
 
@@ -182,5 +219,6 @@ class LabelWidget(QVBoxLayout):
                     self.table.model().dataframe.drop(label, inplace=True)
                     print(f"label {label} was removed")
 
-            self.table.update()
-            self.table.sortByColumn(2, Qt.DescendingOrder)
+        self.update_size_column()
+        self.table.update()
+        self.table.sortByColumn(2, Qt.DescendingOrder)
