@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from qtpy import QtCore
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
 from napari_karyotype.utils import get_img, guess_chromosome_labels, ChromosomeLabel
 from math import hypot
@@ -65,6 +66,7 @@ class OrderWidget(QVBoxLayout):
         for img_label, chr_label in zip(img_labels, chr_labels):
             region_table.at[img_label, "label"] = chr_label
         self.table.update()
+        self.sort_table_by_label()
         self.sigOrderChanged.emit()
         print("[guess_chromosome_labels]: sucess")
 
@@ -210,6 +212,7 @@ class OrderWidget(QVBoxLayout):
         self.order = []
         self.order_new = []
         self.table.update()
+        self.sort_table_by_label()
         self.sigOrderChanged.emit()
 
     def toggle_ordering_mode(self, flag):
@@ -219,3 +222,7 @@ class OrderWidget(QVBoxLayout):
             self.activate_ordering_mode()
         else:
             self.deactivate_ordering_mode()
+
+    def sort_table_by_label(self):
+        label_col = self.table.model().dataframe.columns.get_loc("label")
+        self.table.sortByColumn(label_col, Qt.AscendingOrder)
