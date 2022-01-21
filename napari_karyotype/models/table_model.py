@@ -8,12 +8,13 @@ class PandasTableModel(QtCore.QAbstractTableModel):
     sigChange = QtCore.Signal(int, int, object, object)
 
     # def __init__(self, pandas_dataframe, colors):
-    def __init__(self, pandas_dataframe, get_color, cell_format={}):
+    def __init__(self, pandas_dataframe, get_color, cell_format={}, converters={}):
         super().__init__()
 
         self.setDataframe(pandas_dataframe)
         self.get_color = get_color
         self.cell_format = cell_format
+        self.converters = converters
 
     def setDataframe(self, pandas_dataframe):
         self.dataframe = pandas_dataframe
@@ -77,11 +78,13 @@ class PandasTableModel(QtCore.QAbstractTableModel):
 
     def setData(self, index, value, role):
         if role == QtCore.Qt.EditRole:
-            old_value = self.dataframe.iat[index.row(), self._dataIndex(index.column())]
-            self.dataframe.iat[index.row(), self._dataIndex(index.column())] = value
-            self.sigChange.emit(
-                index.row(), self._dataIndex(index.column()), old_value, value
-            )
+            row = index.row()
+            column = self._dataIndex(index.column())
+            header = self.dataframe.columns[column]
+            convert = self.converters.get(header, lambda x: x)
+            old_value = self.dataframe.iat[row, column]
+            self.dataframe.iat[row, column] = convert(value)
+            self.sigChange.emit(row, column, old_value, value)
             return True
         return False
 
