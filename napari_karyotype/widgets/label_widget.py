@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QSpinBox,
+    QFormLayout,
 )
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QBrush
@@ -54,6 +55,7 @@ class LabelWidget(QVBoxLayout):
         )
         self.addWidget(labeling_descr_label)
 
+        genome_specs_form = QFormLayout()
         genome_size_label = QLabel("genome size:")
 
         self.genome_size_input = QSpinBox()
@@ -62,10 +64,15 @@ class LabelWidget(QVBoxLayout):
         self.genome_size_input.setSuffix(" Mb")
         self.genome_size_input.setSpecialValueText("undefined")
         self.genome_size_input.valueChanged.connect(lambda _: self.update_size_column())
-        genome_size_box = QHBoxLayout()
-        genome_size_box.addWidget(genome_size_label)
-        genome_size_box.addWidget(self.genome_size_input)
-        self.addLayout(genome_size_box)
+        genome_specs_form.addRow("genome size:", self.genome_size_input)
+
+        self.ploidy_input = QSpinBox()
+        self.ploidy_input.setRange(1, 64)
+        self.ploidy_input.setValue(2)
+        self.ploidy_input.valueChanged.connect(lambda _: self.update_size_column())
+        genome_specs_form.addRow("ploidy:", self.ploidy_input)
+
+        self.addLayout(genome_specs_form)
 
         label_btn = QPushButton("Label")
         label_btn.clicked.connect(lambda e: label_wrapper())
@@ -107,6 +114,7 @@ class LabelWidget(QVBoxLayout):
         if not self.table.isEnabled():
             return
 
+        ploidy = self.ploidy_input.value()
         gs = self.genome_size_input.value()
         if gs == self.genome_size_input.minimum():
             self.table.model().cell_format["size"] = "{:.2f}%"
@@ -118,7 +126,9 @@ class LabelWidget(QVBoxLayout):
         factors = self.table.model().dataframe["factor"]
         scaled_areas = areas * factors
         total_area = sum(scaled_areas)
-        self.table.model().dataframe["size"] = scaled_areas / total_area * gs / factors
+        self.table.model().dataframe["size"] = (
+            scaled_areas / total_area * (gs * ploidy) / factors
+        )
 
     def generate_table(self):
         rp = regionprops(self.label_layer.data)
