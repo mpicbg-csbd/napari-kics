@@ -137,10 +137,19 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
             else:
                 return p_int
 
-    def setData(self, index, value, role):
-        if self.hasData() and role == QtCore.Qt.EditRole:
+    def setData(
+        self, index=None, value=None, role=QtCore.Qt.EditRole, row=None, column=None
+    ):
+        if value is None:
+            raise ValueError("value is mandatory")
+
+        if index is not None:
             row = index.row()
             column = index.column()
+        elif row is None or column is None:
+            raise ValueError("neither index nor row and column are given")
+
+        if self.hasData() and role == QtCore.Qt.EditRole:
             header = self.columns[column]
 
             old_value = self.dataframe.iat[row, column]
@@ -173,6 +182,30 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
 
         else:
             return value
+
+    def insertRow(self, id, area, bbox, label=None, factor=1):
+        new_pos = len(self.dataframe)
+        self.beginInsertRows(QtCore.QModelIndex(), new_pos, new_pos)
+        self.dataframe.loc[id] = {
+            "color": "",
+            "label": str(id) if label is None else label,
+            "factor": factor,
+            "area": area,
+            "size": 0,
+            "_bbox": bbox,
+        }
+        self.endInsertRows()
+        self._updateSizeColumn()
+        self.sigChange.emit("insertRow", None, self.dataframe.loc[id, :])
+
+    def removeRow(self, id):
+        rm_pos = self.dataframe.index.get_loc(id)
+        deleted_row = self.dataframe.loc[id, :]
+        self.beginRemoveRows(QtCore.QModelIndex(), rm_pos, rm_pos)
+        self.dataframe.drop(id, inplace=True)
+        self.endRemoveRows()
+        self._updateSizeColumn()
+        self.sigChange.emit("removeRow", deleted_row, None)
 
     def _updateSizeColumn(self):
         if not self.hasData():

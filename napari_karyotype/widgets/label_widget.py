@@ -116,7 +116,7 @@ class LabelWidget(QVBoxLayout):
             ids=res[:, 0],
             labels=[str(label) for label in res[:, 0]],
             areas=res[:, 1],
-            bboxes=res[:, 3],
+            bboxes=res[:, 2],
             genomeSize=self.genome_size_input.value(),
             ploidy=self.ploidy_input.value(),
         )
@@ -175,14 +175,11 @@ class LabelWidget(QVBoxLayout):
 
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
-                self.table.model().dataframe.loc[label] = {
-                    "color": "",
-                    "label": str(label),
-                    "factor": 1,
-                    "area": change.area_diff,
-                    "size": 0,
-                    "_bbox": change.bbox(),
-                }
+                self.table.model().insertRow(
+                    id=label,
+                    area=change.area_diff,
+                    bbox=change.bbox(),
+                )
                 print(f"now it is \n{self.table.model().dataframe}")
 
             elif change.area_diff != 0:
@@ -190,8 +187,12 @@ class LabelWidget(QVBoxLayout):
 
                 if change.area_diff > 0:
                     # label area was extended
-                    self.table.model().dataframe.at[label, "_bbox"] = change.bbox(
-                        self.table.model().dataframe.loc[label, "_bbox"]
+                    self.table.model().setData(
+                        value=change.bbox(
+                            self.table.model().dataframe.loc[label, "_bbox"]
+                        ),
+                        row=self.table.model().dataframe.index.get_loc(label),
+                        column=EstimatesTableModel.columns.get_loc("_bbox"),
                     )
 
                 elif self.table.model().dataframe.at[label, "area"] > 0:
@@ -202,11 +203,17 @@ class LabelWidget(QVBoxLayout):
                         *np.amax(new_coords, axis=0),
                     )
 
-                    self.table.model().dataframe.at[label, "_bbox"] = new_bbox
+                    self.table.model().setData(
+                        value=new_bbox,
+                        row=self.table.model().dataframe.index.get_loc(label),
+                        column=EstimatesTableModel.columns.get_loc("_bbox"),
+                    )
                 else:
                     # label area was reduced completely
-                    self.table.model().dataframe.drop(label, inplace=True)
+                    self.table.model().removeRow(label)
                     print(f"label {label} was removed")
 
         self.table.update()
-        self.table.sortByColumn(2, Qt.DescendingOrder)
+        self.table.sortByColumn(
+            EstimatesTableModel.columns.get_loc("area"), Qt.DescendingOrder
+        )
