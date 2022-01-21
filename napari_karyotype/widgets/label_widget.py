@@ -17,7 +17,6 @@ from skimage.measure import regionprops
 
 from napari_karyotype.models.table_model import PandasTableModel
 from napari_karyotype.utils import get_img, LabelHistoryProcessor
-from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
 
 
 class LabelWidget(QVBoxLayout):
@@ -64,13 +63,17 @@ class LabelWidget(QVBoxLayout):
         self.genome_size_input.setStepType(QSpinBox.AdaptiveDecimalStepType)
         self.genome_size_input.setSuffix(" Mb")
         self.genome_size_input.setSpecialValueText("undefined")
-        self.genome_size_input.valueChanged.connect(lambda _: self.update_size_column())
+        self.genome_size_input.valueChanged.connect(
+            lambda value: setattr(self.table.model(), "genomeSize", value)
+        )
         genome_specs_form.addRow("genome size:", self.genome_size_input)
 
         self.ploidy_input = QSpinBox()
         self.ploidy_input.setRange(1, 64)
         self.ploidy_input.setValue(2)
-        self.ploidy_input.valueChanged.connect(lambda _: self.update_size_column())
+        self.ploidy_input.valueChanged.connect(
+            lambda value: setattr(self.table.model(), "ploidy", value)
+        )
         genome_specs_form.addRow("ploidy:", self.ploidy_input)
 
         self.addLayout(genome_specs_form)
@@ -87,48 +90,18 @@ class LabelWidget(QVBoxLayout):
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        dummy_frame = pd.DataFrame(
-            {
-                "color": [""] * 10,
-                "label": [""] * 10,
-                "factor": [""] * 10,
-                "area": [""] * 10,
-                "size": [""] * 10,
-            }
-        )
-
-        def get_color_of_label(label):
+        def label2rgba(label):
             if hasattr(self, "label_layer"):
                 return self.label_layer.get_color(label)
             else:
                 return None
 
-        self.table.setModel(PandasTableModel(dummy_frame, get_color_of_label))
+        self.table.setModel(PandasTableModel(label2rgba))
         self.table.setDisabled(True)
 
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
 
         self.addWidget(self.table)
-
-    def update_size_column(self):
-        if not self.table.isEnabled():
-            return
-
-        ploidy = self.ploidy_input.value()
-        gs = self.genome_size_input.value()
-        if gs == self.genome_size_input.minimum():
-            self.table.model().cell_format["size"] = "{:.2f}%"
-            gs = 100
-        else:
-            self.table.model().cell_format["size"] = "{:.1f} Mb"
-
-        areas = self.table.model().dataframe["area"]
-        factors = self.table.model().dataframe["factor"]
-        scaled_areas = areas * factors
-        total_area = sum(scaled_areas)
-        self.table.model().dataframe["size"] = (
-            scaled_areas / total_area * (gs * ploidy) / factors
-        )
 
     def generate_table(self):
         rp = regionprops(self.label_layer.data)
@@ -139,54 +112,20 @@ class LabelWidget(QVBoxLayout):
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
 
-        frame = pd.DataFrame(
-            {
-                # color column should have no visible content
-                "color": np.empty(len(res), dtype=np.str_),
-                # display numeric label initially
-                "label": [str(label) for label in res[:, 0]],
-                # assign equals weights to all regions
-                "factor": np.ones(len(res), dtype=np.int_),
-                # number of pixels in each region
-                "area": res[:, 1],
-                # will be computed by `update_size_column`
-                "size": np.zeros(len(res), dtype=np.float_),
-                # coord is not used anymore (should be removed at some point)
-                "_coord": res[:, 2],
-                # bounding box of the region
-                "_bbox": res[:, 3],
-            }
+        self.table.model().initData(
+            ids=res[:, 0],
+            labels=[str(label) for label in res[:, 0]],
+            areas=res[:, 1],
+            coords=res[:, 2],
+            bboxes=res[:, 3],
+            genomeSize=self.genome_size_input.value(),
+            ploidy=self.ploidy_input.value(),
         )
-        frame.index = (row[0] for row in res)
-        self.table.model().setDataframe(frame)
-        self.table.model().cell_format["area"] = "{:d}"
-
-        def label_converter(label):
-            try:
-                return ChromosomeLabel.from_string(label)
-            except ValueError:
-                return label
-
-        self.table.model().converters["label"] = label_converter
-
-        def factor_converter(x):
-            try:
-                x = int(x)
-            except ValueError:
-                raise ValueError("factor must be an integer")
-            if x <= 0:
-                raise ValueError("factor must be at least 1")
-
-            return x
-
-        self.table.model().converters["factor"] = factor_converter
-        self.table.model().sigChange.connect(lambda *_: self.update_size_column())
 
         self.table.sortByColumn(
-            frame.columns.to_list().index("area"), Qt.DescendingOrder
+            PandasTableModel.columns.get_loc("area"), Qt.DescendingOrder
         )
         self.table.setDisabled(False)
-        self.update_size_column()
 
         def sync_selection_table2viewer(e):
             indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
@@ -272,6 +211,5 @@ class LabelWidget(QVBoxLayout):
                     self.table.model().dataframe.drop(label, inplace=True)
                     print(f"label {label} was removed")
 
-        self.update_size_column()
         self.table.update()
         self.table.sortByColumn(2, Qt.DescendingOrder)

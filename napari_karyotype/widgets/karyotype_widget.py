@@ -51,7 +51,7 @@ class KaryotypeContentWidget(QWidget):
         # labelling
         self.label_widget = LabelWidget(self.viewer)
         self.label_widget.table.model().sigChange.connect(
-            lambda row, col, old, new: self.annotate(update_only=True)
+            lambda where, old, new: self.annotate(update_only=True)
         )
         self.layout.addLayout(self.label_widget)
 
@@ -86,6 +86,9 @@ class KaryotypeContentWidget(QWidget):
         font_size=6,
     ):
         tableModel = self.label_widget.table.model()
+        if not tableModel.hasData():
+            return
+
         dataframe = tableModel.dataframe
         nrows = tableModel.rowCount()
         labelCol = dataframe.columns.get_loc("label")

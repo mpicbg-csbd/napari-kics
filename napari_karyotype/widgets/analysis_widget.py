@@ -147,12 +147,12 @@ class AnalysisWidget(QVBoxLayout):
             name="chromosome_estimates",
         )
 
-        if self.table.model().cell_format.get("size", "%").endswith("%"):
-            # sizes are in percent
-            self.estimates *= sum(self.scaffold_sizes) / 100
-        elif self.table.model().cell_format.get("size", "%").endswith("Mb"):
+        if self.table.model().hasGenomeSize():
             # sizes are in mega bases
             self.estimates *= 1_000_000
+        else:
+            # sizes are in percent
+            self.estimates *= sum(self.scaffold_sizes) / 100
 
         self.analysis_result = analysis_plots(
             self.scaffold_sizes,
