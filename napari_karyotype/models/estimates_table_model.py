@@ -9,7 +9,7 @@ from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
 class EstimatesTableModel(QtCore.QAbstractTableModel):
     sigChange = QtCore.Signal(object, object, object)
 
-    columns = pd.Index(["color", "label", "factor", "area", "size", "_coord", "_bbox"])
+    columns = pd.Index(["color", "label", "factor", "area", "size", "_bbox"])
     num_visible_columns = len([c for c in columns if not c.startswith("_")])
     """Number of empty rows to show before the table is filled with real data."""
     num_sample_rows = 10
@@ -27,7 +27,6 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         ids,
         labels,
         areas,
-        coords,
         bboxes,
         factors=1,
         genomeSize=0,
@@ -43,8 +42,6 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
                 "area": areas,
                 # size will be computed from area by `update_size_column`
                 "size": np.zeros(n, dtype=np.float_),
-                # FIXME coord is not used anymore (should be removed at some point)
-                "_coord": coords,
                 "_bbox": bboxes,
             },
             index=ids,

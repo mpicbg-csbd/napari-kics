@@ -107,7 +107,7 @@ class LabelWidget(QVBoxLayout):
         rp = regionprops(self.label_layer.data)
 
         res = np.array(
-            [(r.label, r.area, r.coords[0], r.bbox) for r in rp],
+            [(r.label, r.area, r.bbox) for r in rp],
             dtype=object,
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
@@ -116,7 +116,6 @@ class LabelWidget(QVBoxLayout):
             ids=res[:, 0],
             labels=[str(label) for label in res[:, 0]],
             areas=res[:, 1],
-            coords=res[:, 2],
             bboxes=res[:, 3],
             genomeSize=self.genome_size_input.value(),
             ploidy=self.ploidy_input.value(),
@@ -182,7 +181,6 @@ class LabelWidget(QVBoxLayout):
                     "factor": 1,
                     "area": change.area_diff,
                     "size": 0,
-                    "_coord": change.coord(),
                     "_bbox": change.bbox(),
                 }
                 print(f"now it is \n{self.table.model().dataframe}")
@@ -204,7 +202,6 @@ class LabelWidget(QVBoxLayout):
                         *np.amax(new_coords, axis=0),
                     )
 
-                    self.table.model().dataframe.at[label, "_coord"] = new_coords[0]
                     self.table.model().dataframe.at[label, "_bbox"] = new_bbox
                 else:
                     # label area was reduced completely
