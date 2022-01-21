@@ -125,28 +125,34 @@ class AnalysisWidget(QVBoxLayout):
         if not self.table.isEnabled():
             raise Exception("Complete the above steps before comparison.")
 
-        self.estimates = self.table.model().dataframe["area"][1:]
-        self.estimates.index = self.table.model().dataframe["label"][1:]
-        print(self.estimates)
+        labels = self.table.model().dataframe["label"]
+        sizes = self.table.model().dataframe["size"]
 
-        mean_estimates = dict()
-        for chr_label, estimate in self.estimates.items():
-            key = (
-                chr_label.major if isinstance(chr_label, ChromosomeLabel) else chr_label
-            )
-            current = mean_estimates.get(key, (0, 0))
-            mean_estimates[key] = (
-                current[0] + estimate,
-                current[1] + 1,
-            )
-        for key, (est_sum, est_count) in mean_estimates.items():
-            mean_estimates[key] = est_sum / est_count
+        mean_acc = pd.DataFrame(
+            columns=("total_size", "count"),
+            dtype=(np.int_, np.int_),
+        )
+        for chr_label, estimate in zip(labels, sizes):
+            key = chr_label
+            if isinstance(chr_label, ChromosomeLabel):
+                key = str(chr_label.major)
 
-        self.estimates = pd.Series(mean_estimates, name="chromosome_estimates")
-        print(mean_estimates)
-        print(self.estimates)
-        self.estimates /= sum(self.estimates)
-        self.estimates *= sum(self.scaffold_sizes)
+            if key in mean_acc.index:
+                mean_acc.loc[key] += (estimate, 1)
+            else:
+                mean_acc.loc[key] = (estimate, 1)
+
+        self.estimates = pd.Series(
+            mean_acc["total_size"] / mean_acc["count"],
+            name="chromosome_estimates",
+        )
+
+        if self.table.model().cell_format.get("size", "%").endswith("%"):
+            # sizes are in percent
+            self.estimates *= sum(self.scaffold_sizes) / 100
+        elif self.table.model().cell_format.get("size", "%").endswith("Mb"):
+            # sizes are in mega bases
+            self.estimates *= 1_000_000
 
         self.analysis_result = analysis_plots(
             self.scaffold_sizes,

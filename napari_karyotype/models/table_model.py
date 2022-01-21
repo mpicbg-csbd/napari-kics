@@ -89,9 +89,15 @@ class PandasTableModel(QtCore.QAbstractTableModel):
         return False
 
     def flags(self, index):
-        if index.column() == 0:
+        if index.row() < 0 or index.column() < 0:
+            return QtCore.Qt.NoItemFlags
+
+        column = self._dataIndex(index.column())
+        header = self.dataframe.columns[column]
+
+        if header == "color":
             return QtCore.Qt.ItemIsEnabled
-        elif index.column() == 1:
+        elif header == "label" or header == "factor":
             return (
                 QtCore.Qt.ItemIsEnabled
                 | QtCore.Qt.ItemIsSelectable

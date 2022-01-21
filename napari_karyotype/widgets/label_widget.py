@@ -79,12 +79,15 @@ class LabelWidget(QVBoxLayout):
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
-        dummy_frame = pd.DataFrame()
-        dummy_frame["0"] = [""] * 10
-        dummy_frame["1"] = [""] * 10
-        dummy_frame["2"] = [""] * 10
-        dummy_frame["3"] = [""] * 10
-        dummy_frame.columns = ["color", "label", "area", "size"]
+        dummy_frame = pd.DataFrame(
+            {
+                "color": [""] * 10,
+                "label": [""] * 10,
+                "factor": [""] * 10,
+                "area": [""] * 10,
+                "size": [""] * 10,
+            }
+        )
 
         self.table.setModel(
             PandasTableModel(
@@ -111,10 +114,11 @@ class LabelWidget(QVBoxLayout):
         else:
             self.table.model().cell_format["size"] = "{:.1f} Mb"
 
-        total_area = sum(self.table.model().dataframe["area"])
-        self.table.model().dataframe["size"] = (
-            self.table.model().dataframe["area"] / total_area * gs
-        )
+        areas = self.table.model().dataframe["area"]
+        factors = self.table.model().dataframe["factor"]
+        scaled_areas = areas * factors
+        total_area = sum(scaled_areas)
+        self.table.model().dataframe["size"] = scaled_areas / total_area * gs / factors
 
     def generate_table(self):
         rp = regionprops(self.label_layer.data)
@@ -124,16 +128,45 @@ class LabelWidget(QVBoxLayout):
             dtype=object,
         )
         res = np.array(sorted(res, key=lambda x: x[0]))
-        total_area = sum(res[:, 1])
-        l = [("", str(row[0]), row[1], 0.0, *row[2:]) for row in res]
 
-        frame = pd.DataFrame(l)
-        frame.columns = ["color", "label", "area", "size", "_coord", "_bbox"]
+        frame = pd.DataFrame(
+            {
+                # color column should have no visible content
+                "color": np.empty(len(res), dtype=np.str_),
+                # display numeric label initially
+                "label": [str(label) for label in res[:, 0]],
+                # assign equals weights to all regions
+                "factor": np.ones(len(res), dtype=np.int_),
+                # number of pixels in each region
+                "area": res[:, 1],
+                # will be computed by `update_size_column`
+                "size": np.zeros(len(res), dtype=np.float_),
+                # coord is not used anymore (should be removed at some point)
+                "_coord": res[:, 2],
+                # bounding box of the region
+                "_bbox": res[:, 3],
+            }
+        )
         frame.index = (row[0] for row in res)
         self.table.model().setDataframe(frame)
         self.table.model().cell_format["area"] = "{:d}"
 
-        self.table.sortByColumn(2, Qt.DescendingOrder)
+        def factor_converter(x):
+            try:
+                x = int(x)
+            except ValueError:
+                raise ValueError("factor must be an integer")
+            if x <= 0:
+                raise ValueError("factor must be at least 1")
+
+            return x
+
+        self.table.model().converters["factor"] = factor_converter
+        self.table.model().sigChange.connect(lambda *_: self.update_size_column())
+
+        self.table.sortByColumn(
+            frame.columns.to_list().index("area"), Qt.DescendingOrder
+        )
         self.table.setDisabled(False)
         self.update_size_column()
 
@@ -186,13 +219,15 @@ class LabelWidget(QVBoxLayout):
 
             if not (label in self.table.model().dataframe.index):
                 print(f"label {label} is not in the dataframe")
-                self.table.model().dataframe = self.table.model().dataframe.append(
-                    pd.DataFrame(
-                        [["", label, change.area_diff, change.coord(), change.bbox()]],
-                        columns=["color", "label", "area", "_coord", "_bbox"],
-                        index=[label],
-                    )
-                )
+                self.table.model().dataframe.loc[label] = {
+                    "color": "",
+                    "label": str(label),
+                    "factor": 1,
+                    "area": change.area_diff,
+                    "size": 0,
+                    "_coord": change.coord(),
+                    "_bbox": change.bbox(),
+                }
                 print(f"now it is \n{self.table.model().dataframe}")
 
             elif change.area_diff != 0:
