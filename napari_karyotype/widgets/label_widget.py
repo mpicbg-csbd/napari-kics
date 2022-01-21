@@ -96,14 +96,13 @@ class LabelWidget(QVBoxLayout):
             }
         )
 
-        self.table.setModel(
-            PandasTableModel(
-                dummy_frame,
-                lambda x: self.label_layer.get_color(x)
-                if hasattr(self, "label_layer")
-                else None,
-            )
-        )
+        def get_color_of_label(label):
+            if hasattr(self, "label_layer"):
+                return self.label_layer.get_color(label)
+            else:
+                return None
+
+        self.table.setModel(PandasTableModel(dummy_frame, get_color_of_label))
         self.table.setDisabled(True)
 
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
