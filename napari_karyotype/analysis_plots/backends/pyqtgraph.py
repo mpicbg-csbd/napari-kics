@@ -631,10 +631,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self._hideCrossHair(hide=False)
 
     def matching_dataframe(self):
+        chromosome_sizes = self.estimates.iloc[self.matching[:, 1]]
+        scaffold_sizes = self.scaffoldSizes.iloc[self.matching[:, 0]]
+
         return pd.DataFrame(
             {
-                "chromosome": self.estimates.index[self.matching[:, 1]],
-                "scaffold": self.scaffoldSizes.index[self.matching[:, 0]],
+                "chromosome": chromosome_sizes.index,
+                "chromosome_size": chromosome_sizes.array,
+                "scaffold": scaffold_sizes.index,
+                "scaffold_size": scaffold_sizes.array,
             }
         )
 
