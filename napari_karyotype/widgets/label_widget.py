@@ -132,10 +132,10 @@ class LabelWidget(QVBoxLayout):
         frame.index = (row[0] for row in res)
         self.table.model().setDataframe(frame)
         self.table.model().cell_format["area"] = "{:d}"
-        self.update_size_column()
 
         self.table.sortByColumn(2, Qt.DescendingOrder)
         self.table.setDisabled(False)
+        self.update_size_column()
 
         def sync_selection_table2viewer(e):
             indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
