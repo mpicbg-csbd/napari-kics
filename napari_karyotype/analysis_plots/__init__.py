@@ -83,7 +83,7 @@ def analysis_plots(
 
     if matching.shape[0] == 0:
         matching_size = min(len(estimates), len(scaffold_sizes))
-        matching = np.arange(matching_size).repeat(2, axis=1)
+        matching = np.vstack((np.arange(matching_size), np.arange(matching_size))).T
         log.warning(
             "could not find an optimal matching; resorting to identity matching"
         )
