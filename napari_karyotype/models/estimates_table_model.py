@@ -6,7 +6,7 @@ from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
 
 
 # based on https://www.pythonguis.com/faq/editing-pyqt-tableview/
-class PandasTableModel(QtCore.QAbstractTableModel):
+class EstimatesTableModel(QtCore.QAbstractTableModel):
     sigChange = QtCore.Signal(object, object, object)
 
     columns = pd.Index(["color", "label", "factor", "area", "size", "_coord", "_bbox"])

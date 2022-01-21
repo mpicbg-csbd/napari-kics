@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 from skimage.measure import regionprops
 
-from napari_karyotype.models.table_model import PandasTableModel
+from napari_karyotype.models.estimates_table_model import EstimatesTableModel
 from napari_karyotype.utils import get_img, LabelHistoryProcessor
 
 
@@ -96,7 +96,7 @@ class LabelWidget(QVBoxLayout):
             else:
                 return None
 
-        self.table.setModel(PandasTableModel(label2rgba))
+        self.table.setModel(EstimatesTableModel(label2rgba))
         self.table.setDisabled(True)
 
         self.viewer.bind_key("Backspace", self.delete_selected_labels)
@@ -123,7 +123,7 @@ class LabelWidget(QVBoxLayout):
         )
 
         self.table.sortByColumn(
-            PandasTableModel.columns.get_loc("area"), Qt.DescendingOrder
+            EstimatesTableModel.columns.get_loc("area"), Qt.DescendingOrder
         )
         self.table.setDisabled(False)
 
