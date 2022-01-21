@@ -81,6 +81,13 @@ def analysis_plots(
         estimates, scaffold_sizes, unmatched_penalty=unmatched_penalty
     )
 
+    if matching.shape[0] == 0:
+        matching_size = min(len(estimates), len(scaffold_sizes))
+        matching = np.arange(matching_size).repeat(2, axis=1)
+        log.warning(
+            "could not find an optimal matching; resorting to identity matching"
+        )
+
     if "." in plotlib:
         raise ValueError("plotlib must not contain dots ('.')")
 
