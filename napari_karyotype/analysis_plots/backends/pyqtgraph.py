@@ -16,7 +16,11 @@ ReturnType = namedtuple("ReturnType", ["matching"])
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
     # TODO show tooltip on hover with scaff/estimate name/index, size diff, abs. sizes, ...
 
-    app = mkQApp("Chromosome size estimation: analysis plots")
+    app = QtWidgets.QApplication.instance()
+    is_running = app is not None
+
+    if not is_running:
+        app = mkQApp("Chromosome size estimation: analysis plots")
 
     # Switch default order to Row-major (in accordance with numpy)
     # Enable anti-aliasing for beautiful plots
@@ -25,7 +29,10 @@ def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
     main_window = MainWindow(estimates, scaffoldSizes, initialMatching)
 
     fix_initial_scaling_of_matrix_view(main_window)
-    app.exec_()
+
+    if not is_running:
+        app.exec_()
+        is_running = True
 
     return ReturnType(main_window.matching_dataframe())
 
