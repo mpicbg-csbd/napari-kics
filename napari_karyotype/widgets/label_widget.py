@@ -17,6 +17,7 @@ from skimage.measure import regionprops
 
 from napari_karyotype.models.table_model import PandasTableModel
 from napari_karyotype.utils import get_img, LabelHistoryProcessor
+from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
 
 
 class LabelWidget(QVBoxLayout):
@@ -159,6 +160,14 @@ class LabelWidget(QVBoxLayout):
         frame.index = (row[0] for row in res)
         self.table.model().setDataframe(frame)
         self.table.model().cell_format["area"] = "{:d}"
+
+        def label_converter(label):
+            try:
+                return ChromosomeLabel.from_string(label)
+            except ValueError:
+                return label
+
+        self.table.model().converters["label"] = label_converter
 
         def factor_converter(x):
             try:

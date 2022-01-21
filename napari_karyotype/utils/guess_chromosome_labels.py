@@ -1,10 +1,27 @@
 from collections import namedtuple
 import numpy as np
 import math
+import re
 
 
 class ChromosomeLabel(namedtuple("ChromosomeLabel", ["major", "minor", "row", "col"])):
     __slots__ = ()
+    label_re = re.compile(r"^0*(?P<major>[0-9]+)(?P<minor>[a-z])$")
+
+    def __new__(cls, major, minor, row=None, col=None):
+        return super().__new__(cls, major, minor, row, col)
+
+    @staticmethod
+    def from_string(string):
+        match = ChromosomeLabel.label_re.fullmatch(string)
+
+        if not match:
+            raise ValueError("invalid string format")
+
+        major = int(match["major"])
+        minor = ord(match["minor"]) - ord("a")
+
+        return ChromosomeLabel(major, minor)
 
     def __str__(self):
         return f"{self.major:02d}{chr(ord('a') + self.minor)}"
@@ -126,7 +143,7 @@ def guess_chromosome_labels(bboxes, *, debug=False):
     return chr_labels
 
 
-def print_test_example():
+def run_guess_tests():
     test_cases = [
         {
             "name": "first",
@@ -451,5 +468,22 @@ def print_test_example():
             print()
 
 
+def run_from_string_test():
+    assert ChromosomeLabel.from_string("00a") == ChromosomeLabel(0, 0)
+    assert ChromosomeLabel.from_string("000001337z") == ChromosomeLabel(1337, 25)
+    try:
+        ChromosomeLabel.from_string("32")
+        assert False
+    except ValueError:
+        pass
+
+    try:
+        ChromosomeLabel.from_string("A")
+        assert False
+    except ValueError:
+        pass
+
+
 if __name__ == "__main__":
-    print_test_example()
+    # run_guess_tests()
+    run_from_string_test()
