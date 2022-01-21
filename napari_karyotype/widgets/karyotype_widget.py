@@ -86,14 +86,14 @@ class KaryotypeContentWidget(QWidget):
         font_size=6,
     ):
         tableModel = self.label_widget.table.model()
+        dataframe = tableModel.dataframe
         nrows = tableModel.rowCount()
-        columns = tableModel.dataframe.columns.tolist()
-        labelCol = columns.index("label")
-        sizeCol = columns.index("size")
+        labelCol = dataframe.columns.get_loc("label")
+        sizeCol = dataframe.columns.get_loc("size")
 
         labels = [tableModel.data(row=i, column=labelCol) for i in range(nrows)]
         sizes = [tableModel.data(row=i, column=sizeCol) for i in range(nrows)]
-        bboxes = [bbox2shape(b) for b in tableModel.dataframe.loc[:, "_bbox"]]
+        bboxes = [bbox2shape(b) for b in dataframe.loc[:, "_bbox"]]
 
         print(
             f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
