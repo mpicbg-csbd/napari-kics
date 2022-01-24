@@ -54,10 +54,10 @@ class ThresholdWidget(QVBoxLayout):
         threshold_slider.setFixedWidth(400)
 
         # threshold slider value
-        th_sl_val = QLabel(f"{slider2image(threshold_slider.value()):0.2f}")
+        th_sl_val = QLabel(f"{slider2image(threshold_slider.value()):0.3f}")
         threshold_slider.valueChanged.connect(
             lambda e: th_sl_val.setText(
-                f"{slider2image(threshold_slider.value()):0.2f}"
+                f"{slider2image(threshold_slider.value()):0.3f}"
             )
         )
         threshold_slider.valueChanged.connect(
