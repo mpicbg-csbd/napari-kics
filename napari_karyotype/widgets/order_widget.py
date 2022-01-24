@@ -3,6 +3,7 @@ from copy import deepcopy
 from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
+from napari_karyotype.models.estimates_table_model import EstimatesTableModel
 from napari_karyotype.utils import get_img, guess_chromosome_labels, ChromosomeLabel
 from math import hypot
 from skimage.measure import regionprops
@@ -62,9 +63,12 @@ class OrderWidget(QVBoxLayout):
         except Exception as e:
             raise Exception(f"Gueesing chromomsome labels failed: {e}")
 
-        region_table = self.table.model().dataframe
+        table = self.table.model()
+        label_col = EstimatesTableModel.columns.get_loc("label")
         for img_label, chr_label in zip(img_labels, chr_labels):
-            region_table.at[img_label, "label"] = chr_label
+            label_row = table.dataframe.index.get_loc(img_label)
+            table.setData(value=chr_label, row=label_row, column=label_col)
+
         self.table.update()
         self.sort_table_by_label()
         self.sigOrderChanged.emit()

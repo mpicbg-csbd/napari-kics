@@ -68,14 +68,6 @@ class LabelWidget(QVBoxLayout):
         )
         genome_specs_form.addRow("genome size:", self.genome_size_input)
 
-        self.ploidy_input = QSpinBox()
-        self.ploidy_input.setRange(1, 64)
-        self.ploidy_input.setValue(2)
-        self.ploidy_input.valueChanged.connect(
-            lambda value: setattr(self.table.model(), "ploidy", value)
-        )
-        genome_specs_form.addRow("ploidy:", self.ploidy_input)
-
         self.addLayout(genome_specs_form)
 
         label_btn = QPushButton("Label")
@@ -118,7 +110,6 @@ class LabelWidget(QVBoxLayout):
             areas=res[:, 1],
             bboxes=res[:, 2],
             genomeSize=self.genome_size_input.value(),
-            ploidy=self.ploidy_input.value(),
         )
 
         self.table.sortByColumn(

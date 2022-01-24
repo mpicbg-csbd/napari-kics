@@ -9,7 +9,7 @@ from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
 class EstimatesTableModel(QtCore.QAbstractTableModel):
     sigChange = QtCore.Signal(object, object, object)
 
-    columns = pd.Index(["color", "label", "factor", "area", "size", "_bbox"])
+    columns = pd.Index(["color", "label", "count", "area", "size", "_bbox"])
     num_visible_columns = len([c for c in columns if not c.startswith("_")])
     """Number of empty rows to show before the table is filled with real data."""
     num_sample_rows = 10
@@ -20,7 +20,6 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         self.id2rgba = id2rgba
         self.dataframe = None
         self._genomeSize = 0
-        self._ploidy = 2
 
     def initData(
         self,
@@ -28,9 +27,8 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         labels,
         areas,
         bboxes,
-        factors=1,
+        counts=1,
         genomeSize=0,
-        ploidy=2,
     ):
         n = len(ids)
         self.dataframe = pd.DataFrame(
@@ -38,7 +36,9 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
                 # color column has invisible content
                 "color": np.empty(n, dtype=np.str_),
                 "label": labels,
-                "factor": np.ones(n, dtype=np.int_) if factors == 1 else factors,
+                "count": np.ones(n, dtype=np.int_)
+                if isinstance(counts, int)
+                else counts,
                 "area": areas,
                 # size will be computed from area by `update_size_column`
                 "size": np.zeros(n, dtype=np.float_),
@@ -47,7 +47,6 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
             index=ids,
         )
         self._genomeSize = genomeSize
-        self._ploidy = ploidy
         self._updateSizeColumn()
         self.sigChange.emit("dataframe", None, None)
 
@@ -67,17 +66,6 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         self._genomeSize = value
         self._updateSizeColumn()
         self.sigChange.emit("genomeSize", old_value, value)
-
-    @property
-    def ploidy(self):
-        return self._ploidy
-
-    @ploidy.setter
-    def ploidy(self, value):
-        old_value = self._ploidy
-        self._ploidy = value
-        self._updateSizeColumn()
-        self.sigChange.emit("ploidy", old_value, value)
 
     def rowCount(self, parent=None, *args, **kwargs):
         if self.hasData():
@@ -153,43 +141,48 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
             header = self.columns[column]
 
             old_value = self.dataframe.iat[row, column]
-            new_value = self._fromString(header, value)
+            new_value = self._convert(header, value)
             self.dataframe.iat[row, column] = new_value
 
-            if header in ("area", "factor"):
+            if header in ("area", "count"):
                 self._updateSizeColumn()
+            elif header == "label":
+                self._updateCountColumn()
             self.sigChange.emit((row, column), old_value, new_value)
             return True
         else:
             return False
 
-    def _fromString(self, column, value):
+    def _convert(self, column, value):
         assert self.hasData()
 
         if column == "label":
+            if isinstance(value, ChromosomeLabel):
+                return value
+
             try:
                 return ChromosomeLabel.from_string(value)
             except ValueError:
                 return value
 
-        elif column == "factor":
+        elif column == "count":
             try:
                 return int(value)
             except ValueError:
-                raise ValueError("factor must be an integer")
+                raise ValueError("count must be an integer")
             if value <= 0:
-                raise ValueError("factor must be at least 1")
+                raise ValueError("count must be at least 1")
 
         else:
             return value
 
-    def insertRow(self, id, area, bbox, label=None, factor=1):
+    def insertRow(self, id, area, bbox, label=None, count=1):
         new_pos = len(self.dataframe)
         self.beginInsertRows(QtCore.QModelIndex(), new_pos, new_pos)
         self.dataframe.loc[id] = {
             "color": "",
             "label": str(id) if label is None else label,
-            "factor": factor,
+            "count": count,
             "area": area,
             "size": 0,
             "_bbox": bbox,
@@ -211,14 +204,33 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         if not self.hasData():
             return
 
-        ploidy = self.ploidy
         gs = self.genomeSize if self.hasGenomeSize() else 100
         areas = self.dataframe["area"]
-        factors = self.dataframe["factor"]
-        scaled_areas = areas * factors
+        counts = self.dataframe["count"]
+        scaled_areas = areas / counts
         total_area = sum(scaled_areas)
 
-        self.dataframe["size"] = scaled_areas / total_area * (gs * ploidy) / factors
+        self.dataframe["size"] = scaled_areas / total_area * gs * counts
+
+    def _updateCountColumn(self):
+        if not self.hasData():
+            return
+
+        def get_key(label):
+            if isinstance(label, ChromosomeLabel):
+                return label.major
+            else:
+                return label
+
+        counts = dict()
+        for label in self.dataframe["label"]:
+            key = get_key(label)
+            count = counts.get(key, 0)
+            counts[key] = count + 1
+
+        for id, label in self.dataframe["label"].items():
+            key = get_key(label)
+            self.dataframe.at[id, "count"] = counts[key]
 
     def flags(self, index):
         if index.row() < 0 or index.column() < 0:
@@ -229,7 +241,7 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
 
         if header == "color":
             return QtCore.Qt.ItemIsEnabled
-        elif header == "label" or header == "factor":
+        elif header == "label" or header == "count":
             return (
                 QtCore.Qt.ItemIsEnabled
                 | QtCore.Qt.ItemIsSelectable
