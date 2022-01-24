@@ -16,7 +16,7 @@ class AnnotationWidget(QVBoxLayout):
         self.annotate_btn.clicked.connect(lambda _: self.parent.annotate())
 
         self.descr_label = QLabel(
-            "5. Annotate the image with bounding boxes and areas:"
+            "4. Annotate the image with bounding boxes and areas:"
         )
         self.addWidget(self.descr_label)
         self.addWidget(self.annotate_btn)

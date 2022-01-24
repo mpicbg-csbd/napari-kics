@@ -51,7 +51,7 @@ class LabelWidget(QVBoxLayout):
             self.label_layer.events.set_data.connect(lambda x: self.update_table())
 
         labeling_descr_label = QLabel(
-            "3. Apply label function to assign a unique integer id to each connected component:"
+            "2. Apply label function to assign a unique integer id to each connected component:"
         )
         self.addWidget(labeling_descr_label)
 

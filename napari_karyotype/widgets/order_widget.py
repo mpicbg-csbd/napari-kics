@@ -45,7 +45,7 @@ class OrderWidget(QVBoxLayout):
         self.buttons_container.addWidget(self.manual_order_button)
 
         # description label
-        self.descr_label = QLabel("4. Adjust the label order.")
+        self.descr_label = QLabel("3. Adjust the label order.")
 
         # layout
         self.addWidget(self.descr_label)

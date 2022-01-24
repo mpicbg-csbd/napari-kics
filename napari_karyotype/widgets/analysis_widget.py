@@ -58,7 +58,7 @@ class AnalysisWidget(QVBoxLayout):
         self.start_comparison_btn = QPushButton("Start comparison")
         self.start_comparison_btn.clicked.connect(lambda x: self.start_comparison())
 
-        self.descr_label = QLabel("6. Compare estimates to scaffold sizes:")
+        self.descr_label = QLabel("5. Compare estimates to scaffold sizes:")
 
         self.addWidget(self.descr_label)
         self.addLayout(self.compare_options_layout)

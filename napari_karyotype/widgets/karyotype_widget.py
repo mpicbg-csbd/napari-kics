@@ -2,12 +2,11 @@ from PyQt5.QtCore import Qt
 from qtpy.QtWidgets import *
 
 from .annotation_widget import AnnotationWidget
-from .blur_widget import BlurWidget
+from .preprocessing_widget import PreprocessingWidget
 from .head_layout import HeadLayout
 from .label_widget import LabelWidget
 from .order_widget import OrderWidget
 from .saving_widget import SavingWidget
-from .threshold_widget import ThresholdWidget
 from .analysis_widget import AnalysisWidget
 from ..utils import bbox2shape
 
@@ -41,12 +40,8 @@ class KaryotypeContentWidget(QWidget):
         self.layout.addLayout(self.head_layout)
 
         # blur
-        self.blur_widget = BlurWidget(self.viewer)
-        self.layout.addLayout(self.blur_widget)
-
-        # thresholding
-        self.threshold_widget = ThresholdWidget(self.viewer)
-        self.layout.addLayout(self.threshold_widget)
+        self.preprocessing_widget = PreprocessingWidget(self.viewer)
+        self.layout.addLayout(self.preprocessing_widget)
 
         # labelling
         self.label_widget = LabelWidget(self.viewer)
