@@ -484,6 +484,12 @@ def run_from_string_test():
         pass
 
 
+def run_to_string_test():
+    assert str(ChromosomeLabel(0, 0)) == "00a"
+    assert str(ChromosomeLabel(1337, 25)) == "1337z"
+
+
 if __name__ == "__main__":
-    # run_guess_tests()
+    run_guess_tests()
     run_from_string_test()
+    run_to_string_test()
