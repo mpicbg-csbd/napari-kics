@@ -21,17 +21,7 @@ class SavingWidget(QVBoxLayout):
         )
 
         self.save_btn = QPushButton("Save")
-        self.save_btn.clicked.connect(
-            lambda x: self.save_path_line_edit.showDialog()
-            if self.save_path_line_edit.text() == ""
-            else None
-        )
-        self.save_btn.clicked.connect(
-            lambda x: print(f"path is {self.save_path_line_edit.text()}")
-        )
-        self.save_btn.clicked.connect(
-            lambda e: self.save_output(self.save_path_line_edit.text())
-        )
+        self.save_btn.clicked.connect(self.onClick)
 
         self.descr_label = QLabel("6. Save results to the the following directory:")
 
@@ -39,6 +29,13 @@ class SavingWidget(QVBoxLayout):
         self.addWidget(self.save_path_line_edit)
         self.addWidget(self.save_btn)
         self.setSpacing(5)
+
+    def onClick(self, event):
+        if (
+            len(self.save_path_line_edit.text()) > 0
+            or self.save_path_line_edit.showDialog()
+        ):
+            self.save_output(self.save_path_line_edit.text())
 
     def save_output(self, path):
         if len(path) == 0:

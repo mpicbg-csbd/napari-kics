@@ -70,10 +70,12 @@ class ClickableLineEdit(QLineEdit):
 
         if text is None or len(text) == 0:
             self.sigRejected.emit()
+            return False
         else:
             self.setText(text)
             self.dir = os.path.basename(text)
             self.sigAccepted.emit(text)
+            return True
 
     def setText(self, text):
         self.dir = os.path.basename(text)
