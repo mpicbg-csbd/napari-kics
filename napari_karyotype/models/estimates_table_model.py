@@ -234,6 +234,8 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
             key = get_key(label)
             self.dataframe.at[id, "count"] = counts[key]
 
+        self._updateSizeColumn()
+
     def flags(self, index):
         if index.row() < 0 or index.column() < 0:
             return QtCore.Qt.NoItemFlags
