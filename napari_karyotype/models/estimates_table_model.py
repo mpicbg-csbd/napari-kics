@@ -170,8 +170,8 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
                 return int(value)
             except ValueError:
                 raise ValueError("count must be an integer")
-            if value <= 0:
-                raise ValueError("count must be at least 1")
+            if value < 0:
+                raise ValueError("count must be at least 0")
 
         else:
             return value
@@ -207,7 +207,9 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         gs = self.genomeSize if self.hasGenomeSize() else 100
         areas = self.dataframe["area"]
         counts = self.dataframe["count"]
-        scaled_areas = areas / counts
+        nonzero_mask = counts > 0
+        scaled_areas = np.zeros_like(counts, dtype=np.float_)
+        scaled_areas[nonzero_mask] = areas[nonzero_mask] / counts[nonzero_mask]
         total_area = sum(scaled_areas)
 
         self.dataframe["size"] = scaled_areas / total_area * gs * counts
