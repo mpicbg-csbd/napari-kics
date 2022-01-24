@@ -63,11 +63,12 @@ class OrderWidget(QVBoxLayout):
         except Exception as e:
             raise Exception(f"Gueesing chromomsome labels failed: {e}")
 
-        table = self.table.model()
+        get_row_index = self.table.model().dataframe.index.get_loc
         label_col = EstimatesTableModel.columns.get_loc("label")
-        for img_label, chr_label in zip(img_labels, chr_labels):
-            label_row = table.dataframe.index.get_loc(img_label)
-            table.setData(value=chr_label, row=label_row, column=label_col)
+        with self.table.model().bulkChanges() as bulkChanges:
+            for img_label, chr_label in zip(img_labels, chr_labels):
+                label_row = get_row_index(img_label)
+                bulkChanges.setData(value=chr_label, row=label_row, column=label_col)
 
         self.table.update()
         self.sort_table_by_label()

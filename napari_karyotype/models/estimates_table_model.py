@@ -263,3 +263,62 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
             inplace=True,
         )
         self.layoutChanged.emit()
+
+    class BulkChanges:
+        def __init__(self, model):
+            self.model = model
+            self.changes = list()
+
+        def __enter__(self):
+            self.changes = list()
+
+            return self
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            # block signals until the end of the method
+            blocker = QtCore.QSignalBlocker(self.model)
+
+            for change in self.changes:
+                method = getattr(self.model, change["method"])
+                del change["method"]
+                method(**change)
+
+            blocker.unblock()
+            self.model.sigChange.emit("bulk", None, None)
+
+        def setData(
+            self, index=None, value=None, role=QtCore.Qt.EditRole, row=None, column=None
+        ):
+            self.changes.append(
+                {
+                    "method": "setData",
+                    "index": index,
+                    "value": value,
+                    "role": role,
+                    "row": row,
+                    "column": column,
+                }
+            )
+
+        def insertRow(self, id, area, bbox, label=None, count=1):
+            self.changes.append(
+                {
+                    "method": "insertRow",
+                    "id": id,
+                    "area": area,
+                    "bbox": bbox,
+                    "label": label,
+                    "count": count,
+                }
+            )
+
+        def removeRow(self, id):
+            self.changes.append(
+                {
+                    "method": "removeRow",
+                    "id": id,
+                }
+            )
+
+    def bulkChanges(self):
+        return EstimatesTableModel.BulkChanges(self)

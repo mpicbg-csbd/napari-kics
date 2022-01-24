@@ -159,50 +159,52 @@ class LabelWidget(QVBoxLayout):
         recent_changes = self.label_manager.recent_changes()
         print(f"[update_table] recent_changes is {recent_changes}")
 
-        for (label, change) in recent_changes.items():
-            if label == 0:
-                # ignore background label
-                continue
+        with self.table.model().bulkChanges() as bulkChanges:
+            for (label, change) in recent_changes.items():
+                if label == 0:
+                    # ignore background label
+                    continue
 
-            if not (label in self.table.model().dataframe.index):
-                print(f"label {label} is not in the dataframe")
-                self.table.model().insertRow(
-                    id=label,
-                    area=change.area_diff,
-                    bbox=change.bbox(),
-                )
-                print(f"now it is \n{self.table.model().dataframe}")
-
-            elif change.area_diff != 0:
-                self.table.model().dataframe.loc[label, "area"] += change.area_diff
-
-                if change.area_diff > 0:
-                    # label area was extended
-                    self.table.model().setData(
-                        value=change.bbox(
-                            self.table.model().dataframe.loc[label, "_bbox"]
-                        ),
-                        row=self.table.model().dataframe.index.get_loc(label),
-                        column=EstimatesTableModel.columns.get_loc("_bbox"),
+                if not (label in self.table.model().dataframe.index):
+                    print(f"label {label} is not in the dataframe")
+                    bulkChanges.insertRow(
+                        id=label,
+                        area=change.area_diff,
+                        bbox=change.bbox(),
                     )
+                    print(f"now it is \n{self.table.model().dataframe}")
 
-                elif self.table.model().dataframe.at[label, "area"] > 0:
-                    # label area was reduced but still exists
-                    new_coords = np.argwhere(self.label_layer.data == label)
-                    new_bbox = (
-                        *np.amin(new_coords, axis=0),
-                        *np.amax(new_coords, axis=0),
-                    )
+                elif change.area_diff != 0:
+                    # TODO use setData instead
+                    self.table.model().dataframe.loc[label, "area"] += change.area_diff
 
-                    self.table.model().setData(
-                        value=new_bbox,
-                        row=self.table.model().dataframe.index.get_loc(label),
-                        column=EstimatesTableModel.columns.get_loc("_bbox"),
-                    )
-                else:
-                    # label area was reduced completely
-                    self.table.model().removeRow(label)
-                    print(f"label {label} was removed")
+                    if change.area_diff > 0:
+                        # label area was extended
+                        bulkChanges.setData(
+                            value=change.bbox(
+                                self.table.model().dataframe.loc[label, "_bbox"]
+                            ),
+                            row=self.table.model().dataframe.index.get_loc(label),
+                            column=EstimatesTableModel.columns.get_loc("_bbox"),
+                        )
+
+                    elif self.table.model().dataframe.at[label, "area"] > 0:
+                        # label area was reduced but still exists
+                        new_coords = np.argwhere(self.label_layer.data == label)
+                        new_bbox = (
+                            *np.amin(new_coords, axis=0),
+                            *np.amax(new_coords, axis=0),
+                        )
+
+                        bulkChanges.setData(
+                            value=new_bbox,
+                            row=self.table.model().dataframe.index.get_loc(label),
+                            column=EstimatesTableModel.columns.get_loc("_bbox"),
+                        )
+                    else:
+                        # label area was reduced completely
+                        bulkChanges.removeRow(label)
+                        print(f"label {label} was removed")
 
         self.table.update()
         self.table.sortByColumn(
