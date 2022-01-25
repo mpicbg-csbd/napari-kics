@@ -89,9 +89,13 @@ class SavingWidget(QVBoxLayout):
 
     def _save_annotated_karyotype(self, path):
         if self.table.isEnabled():
-            anno_tags = self.table.model().dataframe["label"].to_list()
-            anno_sizes = self.table.model().dataframe["area"].to_list()
-            anno_bboxes = self.table.model().dataframe["_bbox"].to_list()
+            table = self.table.model()
+            nrows = table.rowCount()
+            label_col = table.columns.get_loc("label")
+            size_col = table.columns.get_loc("size")
+            anno_tags = [table.data(row=i, column=label_col) for i in range(nrows)]
+            anno_sizes = [table.data(row=i, column=size_col) for i in range(nrows)]
+            anno_bboxes = table.dataframe["_bbox"].to_list()
 
             export_svg(
                 f"{path}/annotated.svg",
