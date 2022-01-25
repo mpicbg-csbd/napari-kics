@@ -7,14 +7,12 @@ see: https://napari.org/docs/dev/plugins/hook_specifications.html
 Replace code below according to your needs.
 """
 from napari_plugin_engine import napari_hook_implementation
-from napari_karyotype.widgets import KaryotypeWidget
-from skimage import io
-from pathlib import Path
-from .global_signals import signals
 
 
 @napari_hook_implementation
 def napari_experimental_provide_dock_widget():
+    from napari_karyotype.widgets import KaryotypeWidget
+
     return [KaryotypeWidget]
 
 
@@ -24,6 +22,10 @@ def napari_experimental_provide_dock_widget():
 
 
 def load_sample_data():
+    from skimage import io
+    from pathlib import Path
+    from .global_signals import signals
+
     data_base = f"{Path(__file__).parent}/resources/data/mHomSap_male"
     data = io.imread(f"{data_base}.jpeg")
 
