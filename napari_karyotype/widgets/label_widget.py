@@ -21,10 +21,11 @@ from napari_karyotype.utils import get_img, LabelHistoryProcessor
 
 
 class LabelWidget(QVBoxLayout):
-    def __init__(self, viewer):
+    def __init__(self, viewer, make_thresholded_image):
         super().__init__()
 
         self.viewer = viewer
+        self.make_thresholded_image = make_thresholded_image
 
         # the actual function
         def label(img):
@@ -34,6 +35,9 @@ class LabelWidget(QVBoxLayout):
 
         # wrapper with napari updates
         def label_wrapper():
+
+            if not "thresholded" in self.viewer.layers:
+                self.make_thresholded_image()
 
             input_image = get_img("thresholded", self.viewer).data
             labelled = label(input_image)

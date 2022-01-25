@@ -135,3 +135,6 @@ class PreprocessingWidget(QVBoxLayout):
             self.viewer.add_image(thresholded_img, **self.thresholded_opts)
 
         self.last_threshold = self.threshold()
+
+    def preprocess(self):
+        self._apply_threshold()

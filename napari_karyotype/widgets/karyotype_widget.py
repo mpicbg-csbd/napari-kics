@@ -44,7 +44,9 @@ class KaryotypeContentWidget(QWidget):
         self.layout.addLayout(self.preprocessing_widget)
 
         # labelling
-        self.label_widget = LabelWidget(self.viewer)
+        self.label_widget = LabelWidget(
+            self.viewer, self.preprocessing_widget.preprocess
+        )
         self.label_widget.table.model().sigChange.connect(
             lambda where, old, new: self.annotate(update_only=True)
         )
