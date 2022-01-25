@@ -4,6 +4,7 @@ from qtpy.QtWidgets import QLabel, QFormLayout, QVBoxLayout
 from qtpy.QtCore import Qt
 from skimage.color import rgba2rgb, rgb2gray
 from skimage.filters import gaussian
+from os import environ
 
 
 class PreprocessingWidget(QVBoxLayout):
@@ -37,7 +38,7 @@ class PreprocessingWidget(QVBoxLayout):
         self.threshold_slider.setMaximum(1.0)
         self.threshold_slider.setTickInterval(20)
         self.threshold_slider.setTickPosition(InputDoubleSlider.TicksBelow)
-        self.threshold_slider.setValue(0.5)
+        self.threshold_slider.setValue(float(environ.get("kt_threshold", 0.5)))
         self.threshold_slider.setDecimals(3)
         self.threshold_slider.setSingleStep(0.01)
         self.threshold_slider.setOrientation(Qt.Horizontal)
@@ -50,7 +51,7 @@ class PreprocessingWidget(QVBoxLayout):
         self.sigma_slider.setMaximum(10)
         self.sigma_slider.setTickInterval(20)
         self.sigma_slider.setTickPosition(InputDoubleSlider.TicksBelow)
-        self.sigma_slider.setValue(0)
+        self.sigma_slider.setValue(float(environ.get("kt_blur", 0.5)))
         self.sigma_slider.setDecimals(2)
         self.sigma_slider.setSingleStep(0.1)
         self.sigma_slider.setOrientation(Qt.Horizontal)

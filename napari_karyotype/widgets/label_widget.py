@@ -14,6 +14,7 @@ from qtpy.QtGui import QBrush
 import numpy as np
 import pandas as pd
 from skimage.measure import regionprops
+from os import environ
 
 from napari_karyotype.models.estimates_table_model import EstimatesTableModel
 from napari_karyotype.utils import get_img, LabelHistoryProcessor
@@ -63,6 +64,8 @@ class LabelWidget(QVBoxLayout):
         self.genome_size_input.setStepType(QSpinBox.AdaptiveDecimalStepType)
         self.genome_size_input.setSuffix(" Mb")
         self.genome_size_input.setSpecialValueText("undefined")
+        if "kt_genome_size" in environ:
+            self.genome_size_input.setValue(int(environ["kt_genome_size"]))
         self.genome_size_input.valueChanged.connect(
             lambda value: setattr(self.table.model(), "genomeSize", value)
         )
