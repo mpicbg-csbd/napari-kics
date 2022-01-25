@@ -78,10 +78,15 @@ class PreprocessingWidget(QVBoxLayout):
             self.input_image = self._to_gray(self.input_layer.data)
             self.last_sigma = None
             self.last_threshold = None
-            self.input_layer.events.set_data.connect(lambda event: print(event))
-            self.input_layer.events.set_data.connect(
-                lambda _: self._assert_input_image(force_update=True)
+            self.viewer.layers.events.removed.connect(
+                lambda e: self.reset_input_layer()
+                if e.value == self.input_layer
+                else print(f"removed layer {e.value.name} at {e.index}")
             )
+
+    def reset_input_layer(self):
+        self.input_layer = None
+        self.input_image = None
 
     @staticmethod
     def _to_gray(img):
