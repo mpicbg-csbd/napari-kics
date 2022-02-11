@@ -32,7 +32,7 @@
 You can install `napari-karyotype` via [pip]:
 
 ```sh
-git clone git@github.com:mpicbg-csbd/napari-karyotype.git
+git clone https://github.com/mpicbg-csbd/napari-karyotype.git
 cd napari-karyotype
 pip install -e .
 ```
