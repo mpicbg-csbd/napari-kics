@@ -208,11 +208,11 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         areas = self.dataframe["area"]
         counts = self.dataframe["count"]
         nonzero_mask = counts > 0
-        scaled_areas = np.zeros_like(counts, dtype=np.float_)
-        scaled_areas[nonzero_mask] = areas[nonzero_mask] / counts[nonzero_mask]
-        total_area = sum(scaled_areas)
+        rho = gs / np.sum(areas[nonzero_mask] / counts[nonzero_mask])
+        sizes = np.zeros_like(areas, dtype=np.float_)
+        sizes[nonzero_mask] = rho * areas.loc[nonzero_mask]
 
-        self.dataframe["size"] = scaled_areas / total_area * gs * counts
+        self.dataframe["size"] = sizes
 
     def _updateCountColumn(self):
         if not self.hasData():
