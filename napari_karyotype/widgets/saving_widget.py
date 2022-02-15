@@ -9,12 +9,13 @@ from napari.utils import progress
 
 
 class SavingWidget(QVBoxLayout):
-    def __init__(self, viewer, table, analysis_widget):
+    def __init__(self, viewer, table, analysis_widget, preprocessing_widget):
         super().__init__()
 
         self.viewer = viewer
         self.table = table
         self.analysis_widget = analysis_widget
+        self.preprocessing_widget = preprocessing_widget
 
         self.save_path_line_edit = ClickableLineEdit(
             placeholderText="Select output directory", mode="directory"
@@ -44,6 +45,7 @@ class SavingWidget(QVBoxLayout):
         for method in progress(
             (
                 "_save_images",
+                "_save_params",
                 "_save_table",
                 "_save_matching",
                 "_save_screenshot",
@@ -65,6 +67,17 @@ class SavingWidget(QVBoxLayout):
                     list(self.viewer.layers["labelled"].data)
                 ),
             )
+
+    def _save_params(self, path):
+        params = pd.Series(
+            {
+                "threshold": self.preprocessing_widget.threshold(),
+                "blur": self.preprocessing_widget.sigma(),
+                "genome_size": self.table.model().genomeSize,
+            }
+        )
+
+        params.to_csv(f"{path}/params.csv", header=False)
 
     def _save_table(self, path):
         if self.table.isEnabled():
