@@ -55,7 +55,7 @@ class SavingWidget(QVBoxLayout):
             getattr(self, method)(path)
 
     def _save_images(self, path):
-        for name in ("blurred", "thresholded", "labelled"):
+        for name in ("inverted", "blurred", "thresholded", "labelled"):
             if name in self.viewer.layers:
                 img = self.viewer.layers[name].data
                 io.imsave(f"{path}/{name}.png", img)

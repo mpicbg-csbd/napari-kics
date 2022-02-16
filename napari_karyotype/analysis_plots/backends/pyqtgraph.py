@@ -34,6 +34,7 @@ def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
         app.exec_()
         is_running = True
 
+    # FIXME this returns immediately after creation not when the window is closed
     return ReturnType(main_window.matching_dataframe())
 
 

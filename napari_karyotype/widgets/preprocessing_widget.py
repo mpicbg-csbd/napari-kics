@@ -1,6 +1,6 @@
 from .input_double_slider import InputDoubleSlider
 from math import sqrt
-from qtpy.QtWidgets import QLabel, QFormLayout, QVBoxLayout
+from qtpy.QtWidgets import QCheckBox, QLabel, QFormLayout, QVBoxLayout
 from qtpy.QtCore import Qt
 from skimage.color import rgba2rgb, rgb2gray
 from skimage.filters import gaussian
@@ -8,6 +8,7 @@ from os import environ
 
 
 class PreprocessingWidget(QVBoxLayout):
+    inverted_opts = {"name": "inverted"}
     blurred_opts = {"name": "blurred"}
     thresholded_opts = {
         "name": "thresholded",
@@ -30,6 +31,12 @@ class PreprocessingWidget(QVBoxLayout):
 
         options_layout = QFormLayout()
 
+        # invert option
+        self.invert_option = QCheckBox()
+        self.invert_option.setText("invert gray-scale image")
+        self.invert_option.stateChanged.connect(lambda _: self.preprocess())
+        options_layout.addRow(self.invert_option)
+
         # threshold slider
         self.threshold_slider = InputDoubleSlider(
             from_slider=lambda x: (x / 100) ** 2, to_slider=lambda x: 100 * sqrt(x)
@@ -42,7 +49,7 @@ class PreprocessingWidget(QVBoxLayout):
         self.threshold_slider.setDecimals(3)
         self.threshold_slider.setSingleStep(0.01)
         self.threshold_slider.setOrientation(Qt.Horizontal)
-        self.threshold_slider.valueChanged.connect(lambda _: self._apply_threshold())
+        self.threshold_slider.valueChanged.connect(lambda _: self.preprocess())
         options_layout.addRow("threshold:", self.threshold_slider)
 
         # sigma slider
@@ -55,11 +62,14 @@ class PreprocessingWidget(QVBoxLayout):
         self.sigma_slider.setDecimals(2)
         self.sigma_slider.setSingleStep(0.1)
         self.sigma_slider.setOrientation(Qt.Horizontal)
-        self.sigma_slider.valueChanged.connect(lambda _: self._apply_threshold())
+        self.sigma_slider.valueChanged.connect(lambda _: self.preprocess())
         options_layout.addRow("blur:", self.sigma_slider)
 
         self.addLayout(options_layout)
         self.setSpacing(5)
+
+    def invert_image(self):
+        return self.invert_option.isChecked()
 
     def sigma(self):
         return self.sigma_slider.value()
@@ -78,6 +88,7 @@ class PreprocessingWidget(QVBoxLayout):
             self.input_image = self._to_gray(self.input_layer.data)
             self.last_sigma = None
             self.last_threshold = None
+            self.last_invert_image = None
             self.viewer.layers.events.removed.connect(
                 lambda e: self.reset_input_layer()
                 if e.value == self.input_layer
@@ -101,15 +112,41 @@ class PreprocessingWidget(QVBoxLayout):
                 f"Cannot process image with type {img.dtype} and shape {img.shape}."
             )
 
-    def _apply_blur(self):
+    def _apply_invert(self):
         self._assert_input_image()
+
+        if self.last_invert_image == self.invert_image():
+            print(
+                f"[PreprocessingWidget] skipping invert (invert={self.invert_image()})"
+            )
+            return
+
+        print(f"[PreprocessingWidget] applying invert (invert={self.invert_image()})")
+
+        if self.invert_image():
+            inverted_image = 1 - self.input_image
+        else:
+            inverted_image = self.input_image
+
+        try:
+            self.viewer.layers[self.inverted_opts["name"]].data = inverted_image
+        except KeyError:
+            self.viewer.add_image(inverted_image, **self.inverted_opts)
+
+        self.last_invert_image = self.invert_image()
+        self.last_sigma = None
+        self.last_threshold = None
+
+    def _apply_blur(self):
+        self._apply_invert()
 
         if self.last_sigma == self.sigma():
             print(f"[PreprocessingWidget] skipping blur (sigma={self.sigma()})")
             return
 
-        print(f"[PreprocessingWidget] applying blur (sigma={self.sigma()})")
-        blurred_img = gaussian(self.input_image, self.sigma())
+        print(f"[PreprocessingWdget] applying blur (sigma={self.sigma()})")
+        inverted_image = self.viewer.layers[self.inverted_opts["name"]].data
+        blurred_img = gaussian(inverted_image, self.sigma())
 
         try:
             self.viewer.layers[self.blurred_opts["name"]].data = blurred_img
