@@ -212,7 +212,7 @@ class OrderWidget(QVBoxLayout):
             )
 
             for label in unprocessed_labels:
-                self.table.model().dataframe.at[label, "label"] = "9999"
+                self.table.model().dataframe.at[label, "label"] = "unassigned"
 
         self.order = []
         self.order_new = []
