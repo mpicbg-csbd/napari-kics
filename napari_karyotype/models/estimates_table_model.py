@@ -257,9 +257,16 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
     # https://stackoverflow.com/questions/28660287/sort-qtableview-in-pyqt5
     def sort(self, column, order):
         self.layoutAboutToBeChanged.emit()
+        column = self.columns[column]
+        if column == "label":
+            key = lambda col: col.astype(str)
+        else:
+            key = None
+
         self.dataframe.sort_values(
-            by=self.columns[column],
+            by=column,
             ascending=(order == QtCore.Qt.AscendingOrder),
+            key=key,
             inplace=True,
         )
         self.layoutChanged.emit()
