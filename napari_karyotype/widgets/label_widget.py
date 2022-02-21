@@ -17,7 +17,7 @@ from skimage.measure import regionprops
 from os import environ
 
 from napari_karyotype.models.estimates_table_model import EstimatesTableModel
-from napari_karyotype.utils import get_img, LabelHistoryProcessor
+from napari_karyotype.utils import get_img, LabelHistoryProcessor, replace_label
 
 
 class LabelWidget(QVBoxLayout):
@@ -147,20 +147,7 @@ class LabelWidget(QVBoxLayout):
         labels = self.table.model().dataframe.index[indices]
 
         print(f"[backspace]: removing indices {indices}")
-
-        matches = self.label_layer.data == labels[0]
-        for label in labels[1:]:
-            matches |= self.label_layer.data == label
-        match_indices = np.nonzero(matches)
-        self.label_layer._save_history(
-            (
-                match_indices,
-                np.array(self.label_layer.data[match_indices], copy=True),
-                new_label,
-            )
-        )
-        self.label_layer.data[match_indices] = new_label
-        self.label_layer.refresh()
+        replace_label(self.label_layer, labels, new_label)
 
     def update_table(self):
         recent_changes = self.label_manager.recent_changes()
