@@ -216,18 +216,29 @@ class OrderWidget(QVBoxLayout):
 
         if len(self.order) > 0:
             print("relabelling")
-            for ind, label_list in enumerate(self.order_new):
-                for subind, label in enumerate(label_list):
-                    self.table.model().dataframe.at[label, "label"] = ChromosomeLabel(
-                        ind + 1, subind, None, None
+
+            get_row_index = self.table.model().dataframe.index.get_loc
+            label_col = EstimatesTableModel.columns.get_loc("label")
+            with self.table.model().bulkChanges() as bulkChanges:
+                for ind, label_list in enumerate(self.order_new):
+                    for subind, label in enumerate(label_list):
+                        chr_label = ChromosomeLabel(ind + 1, subind, None, None)
+                        label_row = get_row_index(label)
+                        bulkChanges.setData(
+                            value=chr_label, row=label_row, column=label_col
+                        )
+
+                unprocessed_labels = (
+                    set(list(self.table.model().dataframe.index))
+                    - set(self.order)
+                    - {0}
+                )
+
+                for label in unprocessed_labels:
+                    label_row = get_row_index(label)
+                    bulkChanges.setData(
+                        value="unassigned", row=label_row, column=label_col
                     )
-
-            unprocessed_labels = (
-                set(list(self.table.model().dataframe.index)) - set(self.order) - {0}
-            )
-
-            for label in unprocessed_labels:
-                self.table.model().dataframe.at[label, "label"] = "unassigned"
 
         self.order = []
         self.order_new = []
@@ -246,5 +257,5 @@ class OrderWidget(QVBoxLayout):
             self.manual_order_button.setDown(False)
 
     def sort_table_by_label(self):
-        label_col = self.table.model().dataframe.columns.get_loc("label")
+        label_col = EstimatesTableModel.columns.get_loc("label")
         self.table.sortByColumn(label_col, Qt.AscendingOrder)
