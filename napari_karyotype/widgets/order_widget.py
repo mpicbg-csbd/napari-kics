@@ -11,6 +11,8 @@ from napari_karyotype.utils import (
 from math import floor, hypot
 from skimage.measure import regionprops
 
+import numpy as np
+
 
 class OrderWidget(QVBoxLayout):
     sigOrderChanged = QtCore.Signal()
@@ -84,7 +86,14 @@ class OrderWidget(QVBoxLayout):
         curr_order = []
 
         def maybe_add_label_at(position):
-            curr_label = label_layer.data[floor(position[0]), floor(position[1])]
+            position = np.array(position, dtype=np.int_)
+
+            if not ((0 < position) & (position < label_layer.data.shape)).all():
+                # position out of bounds
+                return
+
+            y, x = position
+            curr_label = label_layer.data[y, x]
 
             if (
                 curr_label != 0
