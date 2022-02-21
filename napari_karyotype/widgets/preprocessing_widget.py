@@ -178,5 +178,11 @@ class PreprocessingWidget(QVBoxLayout):
 
         self.last_threshold = self.threshold()
 
+        try:
+            # label layer is out-of-date => remove it (if present)
+            self.viewer.layers.remove("labelled")
+        except ValueError:
+            pass
+
     def preprocess(self):
         self._apply_threshold()
