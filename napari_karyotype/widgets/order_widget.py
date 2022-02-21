@@ -5,8 +5,10 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
 from napari_karyotype.models.estimates_table_model import EstimatesTableModel
 from napari_karyotype.utils import get_img, guess_chromosome_labels, ChromosomeLabel
-from math import hypot
+from math import floor, hypot
 from skimage.measure import regionprops
+
+import numpy as np
 
 
 class OrderWidget(QVBoxLayout):
@@ -82,14 +84,24 @@ class OrderWidget(QVBoxLayout):
         curr_order = []
 
         def maybe_add_label_at(position):
-            curr_label = label_layer.get_value(position)
+            curr_label = label_layer.data[floor(position[0]), floor(position[1])]
 
             if (
                 curr_label != 0
                 and curr_label is not None
                 and (len(curr_order) == 0 or curr_order[-1] != curr_label)
             ):
-                label_layer.fill(position, 0)
+                print(f"[drag_callback]: removing {curr_label} marked at {position}")
+                match_indices = label_layer.data == curr_label
+                label_layer._save_history(
+                    (
+                        match_indices,
+                        np.array(label_layer.data[match_indices], copy=True),
+                        0,
+                    )
+                )
+                label_layer.data[match_indices] = 0
+                label_layer.refresh()
                 curr_order.append(curr_label)
 
         def add_labels_on_line(from_pos, to_pos):
