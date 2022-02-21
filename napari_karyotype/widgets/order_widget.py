@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
@@ -27,6 +25,7 @@ class OrderWidget(QVBoxLayout):
         # list to store the reordering sequence
         self.order = []
         self.order_new = []
+        self.order_layer = None
 
         # button configuration
         self.guess_order_button = QPushButton("Automatically guess order")
@@ -172,36 +171,39 @@ class OrderWidget(QVBoxLayout):
         """create the new label layer and allow relabelling"""
 
         self.label_layer = get_img("labelled", self.viewer)
-
         self.order.clear()
 
         # make all the existing layers invisible
+        self.visible_layers = set()
         for layer in self.viewer.layers:
-            layer.visible = 0
+            if layer.visible:
+                self.visible_layers.add(layer)
+                layer.visible = False
 
         # add a new auxiliary ordering layer
-        ordering_label_layer = self.viewer.add_labels(
-            deepcopy(self.label_layer.data), name="ordering"
+        self.order_layer = self.viewer.add_labels(
+            self.label_layer.data.copy(), name="ordering"
         )
-        ordering_label_layer.editable = False
-        ordering_label_layer.mouse_drag_callbacks.append(self.order_drag_callback)
+        self.order_layer.editable = False
+        self.order_layer.mouse_drag_callbacks.append(self.order_drag_callback)
 
         # attach the event listener
-        ordering_label_layer.events.set_data.connect(
-            lambda x: self.parse_recent_step(ordering_label_layer)
+        self.order_layer.events.set_data.connect(
+            lambda x: self.parse_recent_step(self.order_layer)
         )
 
     def deactivate_ordering_mode(self):
         """remove the auxiliary layer and update the current labels according to the generated relabeling"""
 
         # delete the auxiliary ordering layer
-        names = [layer.name for layer in self.viewer.layers]
-        ind = names.index("ordering")
+        ind = self.viewer.layers.index(self.order_layer)
         self.viewer.layers.pop(ind)
+        self.order_layer = None
 
         # make other layers visible
-        for layer in self.viewer.layers:
-            layer.visible = 1
+        for layer in self.visible_layers:
+            layer.visible = True
+        self.visible_layers = set()
 
         print(f"order is {self.order}")
 
