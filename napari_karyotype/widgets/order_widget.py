@@ -40,9 +40,7 @@ class OrderWidget(QVBoxLayout):
                 self.manual_order_button.isChecked()
             )
         )
-        self.manual_order_button.clicked.connect(
-            lambda e: self.toggle_ordering_mode(self.manual_order_button.isChecked())
-        )
+        self.manual_order_button.clicked.connect(lambda e: self.toggle_ordering_mode())
 
         self.buttons_container = QHBoxLayout()
         self.buttons_container.addWidget(self.guess_order_button)
@@ -228,13 +226,15 @@ class OrderWidget(QVBoxLayout):
         self.sort_table_by_label()
         self.sigOrderChanged.emit()
 
-    def toggle_ordering_mode(self, flag):
+    def toggle_ordering_mode(self):
         """switch between the modes"""
 
-        if flag:
+        if self.order_layer is None:
             self.activate_ordering_mode()
+            self.manual_order_button.setDown(True)
         else:
             self.deactivate_ordering_mode()
+            self.manual_order_button.setDown(False)
 
     def sort_table_by_label(self):
         label_col = self.table.model().dataframe.columns.get_loc("label")
