@@ -71,6 +71,7 @@ class SavingWidget(QVBoxLayout):
     def _save_params(self, path):
         params = pd.Series(
             {
+                "invert_image": self.preprocessing_widget.invert_image(),
                 "threshold": self.preprocessing_widget.threshold(),
                 "blur": self.preprocessing_widget.sigma(),
                 "genome_size": self.table.model().genomeSize,

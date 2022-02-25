@@ -34,21 +34,21 @@ class LabelWidget(QVBoxLayout):
             return label(img)[0]
 
         # wrapper with napari updates
-        def label_wrapper():
+        def label_wrapper(refresh=False):
+            if not refresh:
+                if not "thresholded" in self.viewer.layers:
+                    self.make_thresholded_image()
 
-            if not "thresholded" in self.viewer.layers:
-                self.make_thresholded_image()
+                input_image = get_img("thresholded", self.viewer).data
+                labelled = label(input_image)
 
-            input_image = get_img("thresholded", self.viewer).data
-            labelled = label(input_image)
+                self.viewer.layers["thresholded"].visible = False
 
-            self.viewer.layers["thresholded"].visible = False
-
-            try:
-                self.viewer.layers["labelled"].data = labelled
-                self.viewer.layers["labelled"].visible = True
-            except KeyError:
-                self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
+                try:
+                    self.viewer.layers["labelled"].data = labelled
+                    self.viewer.layers["labelled"].visible = True
+                except KeyError:
+                    self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
 
             self.label_layer = get_img("labelled", self.viewer)
             self.label_manager = LabelHistoryProcessor(self.label_layer)
@@ -80,7 +80,14 @@ class LabelWidget(QVBoxLayout):
         label_btn = QPushButton("Label")
         label_btn.clicked.connect(lambda e: label_wrapper())
 
-        self.addWidget(label_btn)
+        refresh_btn = QPushButton("Refresh table from layer")
+        refresh_btn.clicked.connect(lambda e: label_wrapper(refresh=True))
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(label_btn)
+        buttons_layout.addWidget(refresh_btn)
+
+        self.addLayout(buttons_layout)
         self.setSpacing(5)
 
         # initializing the table with a dummy (empty) dataframe
