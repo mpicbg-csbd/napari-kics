@@ -1,6 +1,6 @@
 from .input_double_slider import InputDoubleSlider
 from math import sqrt
-from qtpy.QtWidgets import QCheckBox, QLabel, QFormLayout, QVBoxLayout
+from qtpy.QtWidgets import QCheckBox, QLabel, QFormLayout, QVBoxLayout, QPushButton, QSizePolicy
 from qtpy.QtCore import Qt
 from skimage.color import rgba2rgb, rgb2gray
 from skimage.filters import gaussian
@@ -24,18 +24,23 @@ class PreprocessingWidget(QVBoxLayout):
         self.input_layer = None
         self.input_image = None
 
+        options_layout = QFormLayout()
+
+
         # blur step description label
         blur_descr_label = QLabel(
             "1. Select an appropriate threshold and blur to segment the image."
         )
 
-        options_layout = QFormLayout()
+        options_layout.addRow(blur_descr_label)
 
         # invert option
         self.invert_option = QCheckBox()
-        self.invert_option.setText("invert gray-scale image")
+        # self.invert_option.setText()
+        invert_option_label = QLabel("- invert:")
+        invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
         self.invert_option.stateChanged.connect(lambda _: self.preprocess())
-        options_layout.addRow(self.invert_option)
+        options_layout.addRow(invert_option_label, self.invert_option)
 
         # threshold slider
         self.threshold_slider = InputDoubleSlider(
@@ -50,7 +55,13 @@ class PreprocessingWidget(QVBoxLayout):
         self.threshold_slider.setSingleStep(0.01)
         self.threshold_slider.setOrientation(Qt.Horizontal)
         self.threshold_slider.valueChanged.connect(lambda _: self.preprocess())
-        options_layout.addRow("threshold:", self.threshold_slider)
+
+        threshold_label = QLabel("- threshold:")
+        threshold_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+
+        dummy_button = QPushButton("foo")
+        options_layout.addRow(threshold_label, self.threshold_slider)
+        # options_layout.addRow(threshold_label, dummy_button)
 
         # sigma slider
         self.sigma_slider = InputDoubleSlider(scale=1 / 20)
@@ -63,10 +74,26 @@ class PreprocessingWidget(QVBoxLayout):
         self.sigma_slider.setSingleStep(0.1)
         self.sigma_slider.setOrientation(Qt.Horizontal)
         self.sigma_slider.valueChanged.connect(lambda _: self.preprocess())
-        options_layout.addRow("blur:", self.sigma_slider)
+        blur_label = QLabel("- blur:")
+        blur_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        options_layout.addRow(blur_label, self.sigma_slider)
+
+        options_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
 
         self.addLayout(options_layout)
         self.setSpacing(5)
+
+        dummy_button1 = QPushButton("button 1")
+
+        dummy_button2 = QPushButton("button 2")
+
+
+        # options_layout.addRow(dummy_button1, dummy_button2)
+        options_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
+        # dummy_button1.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        # dummy_button2.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+
 
     def invert_image(self):
         return self.invert_option.isChecked()

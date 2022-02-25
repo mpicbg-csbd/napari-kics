@@ -27,14 +27,20 @@ class InputDoubleSlider(QWidget):
         # create slider component
         self.slider = QSlider(self)
         self.slider.setSizePolicy(
-            QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
         )
+
+        # self.slider.setSizePolicy(
+        #     QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        # )
+        self.slider.setMinimumWidth(100)
         self.slider.valueChanged.connect(lambda v: self._syncValue(self.input, v))
         self.slider.valueChanged.connect(lambda _: self.valueChanged.emit(self.value()))
 
         # create input component (spin box)
         self.input = QDoubleSpinBox(self)
-        self.input.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self.input.setFixedWidth(100)
+        self.input.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.input.valueChanged.connect(lambda v: self._syncValue(self.slider, v))
         self.input.valueChanged.connect(lambda _: self.valueChanged.emit(self.value()))
 
@@ -48,6 +54,10 @@ class InputDoubleSlider(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().addWidget(self.slider)
         self.layout().addWidget(self.input)
+        self.layout().setContentsMargins(0,0,0,0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+
 
     __delegate2slider = {
         "orientation",

@@ -88,6 +88,7 @@ class LabelWidget(QVBoxLayout):
         self.table.setSortingEnabled(True)
         # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setMinimumHeight(300)
 
         def label2rgba(label):
             if hasattr(self, "label_layer"):
