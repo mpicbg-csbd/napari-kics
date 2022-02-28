@@ -29,7 +29,7 @@ class PreprocessingWidget(QVBoxLayout):
 
         # blur step description label
         blur_descr_label = QLabel(
-            "1. Select an appropriate threshold and blur to segment the image."
+            "1. Select an appropriate threshold and blur to segment the image:"
         )
 
         options_layout.addRow(blur_descr_label)
@@ -41,6 +41,7 @@ class PreprocessingWidget(QVBoxLayout):
         invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
         self.invert_option.stateChanged.connect(lambda _: self.preprocess())
         options_layout.addRow(invert_option_label, self.invert_option)
+
 
         # threshold slider
         self.threshold_slider = InputDoubleSlider(
@@ -58,10 +59,7 @@ class PreprocessingWidget(QVBoxLayout):
 
         threshold_label = QLabel("- threshold:")
         threshold_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
-
-        dummy_button = QPushButton("foo")
         options_layout.addRow(threshold_label, self.threshold_slider)
-        # options_layout.addRow(threshold_label, dummy_button)
 
         # sigma slider
         self.sigma_slider = InputDoubleSlider(scale=1 / 20)
@@ -83,16 +81,8 @@ class PreprocessingWidget(QVBoxLayout):
         self.addLayout(options_layout)
         self.setSpacing(5)
 
-        dummy_button1 = QPushButton("button 1")
-
-        dummy_button2 = QPushButton("button 2")
-
-
         # options_layout.addRow(dummy_button1, dummy_button2)
         options_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-
-        # dummy_button1.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
-        # dummy_button2.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
 
 
     def invert_image(self):

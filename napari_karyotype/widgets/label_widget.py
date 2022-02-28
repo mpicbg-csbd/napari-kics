@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QSpinBox,
     QFormLayout,
+    QSizePolicy
 )
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QBrush
@@ -26,6 +27,7 @@ class LabelWidget(QVBoxLayout):
 
         self.viewer = viewer
         self.make_thresholded_image = make_thresholded_image
+        self.setAlignment(Qt.AlignLeft)
 
         # the actual function
         def label(img):
@@ -61,7 +63,14 @@ class LabelWidget(QVBoxLayout):
         self.addWidget(labeling_descr_label)
 
         genome_specs_form = QFormLayout()
-        genome_size_label = QLabel("genome size:")
+
+        btn = QPushButton()
+        btn.sizeHint()
+
+
+
+        genome_size_label = QLabel("- genome size:")
+        genome_size_label.setAlignment(Qt.AlignLeft)
 
         self.genome_size_input = QSpinBox()
         self.genome_size_input.setRange(0, 500_000)
@@ -73,7 +82,16 @@ class LabelWidget(QVBoxLayout):
         self.genome_size_input.valueChanged.connect(
             lambda value: setattr(self.table.model(), "genomeSize", value)
         )
-        genome_specs_form.addRow("genome size:", self.genome_size_input)
+
+        self.genome_size_input.setMinimumWidth(200)
+        self.genome_size_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        genome_specs_form.addRow(genome_size_label, self.genome_size_input)
+        genome_specs_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+
+        genome_specs_form.setLabelAlignment(Qt.AlignLeft)
+        genome_specs_form.setFormAlignment(Qt.AlignLeft)
+
+
 
         self.addLayout(genome_specs_form)
 
@@ -86,6 +104,8 @@ class LabelWidget(QVBoxLayout):
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(label_btn)
         buttons_layout.addWidget(refresh_btn)
+
+
 
         self.addLayout(buttons_layout)
         self.setSpacing(5)
@@ -212,3 +232,5 @@ class LabelWidget(QVBoxLayout):
         self.table.sortByColumn(
             EstimatesTableModel.columns.get_loc("area"), Qt.DescendingOrder
         )
+
+        # self.layout().setAlignment(Qt.AlignLeft)
