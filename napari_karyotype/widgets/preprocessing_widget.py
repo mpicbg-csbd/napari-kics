@@ -38,7 +38,8 @@ class PreprocessingWidget(QVBoxLayout):
         self.invert_option = QCheckBox()
         # self.invert_option.setText()
         invert_option_label = QLabel("- invert:")
-        invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        # invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.invert_option.stateChanged.connect(lambda _: self.preprocess())
         options_layout.addRow(invert_option_label, self.invert_option)
 
@@ -58,7 +59,7 @@ class PreprocessingWidget(QVBoxLayout):
         self.threshold_slider.valueChanged.connect(lambda _: self.preprocess())
 
         threshold_label = QLabel("- threshold:")
-        threshold_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        threshold_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         options_layout.addRow(threshold_label, self.threshold_slider)
 
         # sigma slider
@@ -73,7 +74,7 @@ class PreprocessingWidget(QVBoxLayout):
         self.sigma_slider.setOrientation(Qt.Horizontal)
         self.sigma_slider.valueChanged.connect(lambda _: self.preprocess())
         blur_label = QLabel("- blur:")
-        blur_label.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignCenter)
+        blur_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         options_layout.addRow(blur_label, self.sigma_slider)
 
         options_layout.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
@@ -83,6 +84,9 @@ class PreprocessingWidget(QVBoxLayout):
 
         # options_layout.addRow(dummy_button1, dummy_button2)
         options_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        options_layout.setContentsMargins(0,0,0,0)
+
+        self.layout().setContentsMargins(0,0,0,0)
 
 
     def invert_image(self):

@@ -91,6 +91,7 @@ class LabelWidget(QVBoxLayout):
 
         genome_specs_form.setLabelAlignment(Qt.AlignLeft)
         genome_specs_form.setFormAlignment(Qt.AlignLeft)
+        genome_specs_form.setContentsMargins(0,5,0,5)
 
 
 
