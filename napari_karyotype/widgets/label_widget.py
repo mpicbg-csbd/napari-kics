@@ -83,10 +83,11 @@ class LabelWidget(QVBoxLayout):
             lambda value: setattr(self.table.model(), "genomeSize", value)
         )
 
-        self.genome_size_input.setMinimumWidth(200)
-        self.genome_size_input.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.genome_size_input.setFixedWidth(200)
+        self.genome_size_input.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         genome_specs_form.addRow(genome_size_label, self.genome_size_input)
-        genome_specs_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        # genome_specs_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        genome_specs_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         genome_specs_form.setLabelAlignment(Qt.AlignLeft)
         genome_specs_form.setFormAlignment(Qt.AlignLeft)
