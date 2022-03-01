@@ -76,6 +76,11 @@ class KaryotypeContentWidget(QWidget):
         )
         self.layout.addLayout(self.saving_widget)
 
+        self._console_populated = False
+        self.viewer.window.qt_viewer.dockConsole.visibilityChanged.connect(
+            self._ensure_populate_console
+        )
+
     def annotate(
         self,
         *,
@@ -127,3 +132,13 @@ class KaryotypeContentWidget(QWidget):
                 properties=properties,
                 text=text_parameters,
             )
+
+    def _ensure_populate_console(self):
+        if not self._console_populated:
+            self.viewer.update_console(
+                {
+                    "karyotype_widget": self,
+                    "karyotype_table": self.label_widget.table.model(),
+                }
+            )
+            self._console_populated = True
