@@ -175,10 +175,11 @@ class LabelWidget(QVBoxLayout):
 
     def delete_selected_labels(self, e, *, new_label=0):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-        labels = self.table.model().dataframe.index[list(indices)]
 
-        print(f"[backspace]: removing indices {indices}")
-        replace_label(self.label_layer, labels, new_label)
+        if len(indices) > 0:
+            print(f"[backspace]: removing indices {indices}")
+            labels = self.table.model().dataframe.index[indices]
+            replace_label(self.label_layer, labels, new_label)
 
     def update_table(self):
         recent_changes = self.label_manager.recent_changes()
