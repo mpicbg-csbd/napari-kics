@@ -65,7 +65,7 @@ class OrderWidget(QVBoxLayout):
         try:
             chr_labels = guess_chromosome_labels(bounding_boxes)
         except Exception as e:
-            raise Exception(f"Gueesing chromomsome labels failed: {e}")
+            raise Exception(f"Guessing chromosome labels failed: {e}")
 
         get_row_index = self.table.model().dataframe.index.get_loc
         label_col = EstimatesTableModel.columns.get_loc("label")
@@ -77,7 +77,7 @@ class OrderWidget(QVBoxLayout):
         self.table.update()
         self.sort_table_by_label()
         self.sigOrderChanged.emit()
-        print("[guess_chromosome_labels]: sucess")
+        print("[guess_chromosome_labels]: success")
 
     def order_drag_callback(self, label_layer, event):
         """label layer drag callback to remove the labels that have been crossed-out (added to the self.order list)"""

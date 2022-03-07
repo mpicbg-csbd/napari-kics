@@ -1,3 +1,7 @@
+from os import environ
+
+import numpy as np
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QTableView,
     QAbstractItemView,
@@ -9,13 +13,7 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QSizePolicy
 )
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QBrush
-
-import numpy as np
-import pandas as pd
 from skimage.measure import regionprops
-from os import environ
 
 from napari_karyotype.models.estimates_table_model import EstimatesTableModel
 from napari_karyotype.utils import get_img, LabelHistoryProcessor, replace_label
@@ -32,7 +30,6 @@ class LabelWidget(QVBoxLayout):
         # the actual function
         def label(img):
             from scipy.ndimage import label
-
             return label(img)[0]
 
         # wrapper with napari updates
@@ -63,15 +60,14 @@ class LabelWidget(QVBoxLayout):
 
             self.init_table_from_layer()
 
+        # widget head label
         labeling_descr_label = QLabel(
             "2. Apply label function to assign a unique integer id to each connected component:"
         )
         self.addWidget(labeling_descr_label)
 
+        # genome size QFormLayout
         genome_specs_form = QFormLayout()
-
-        btn = QPushButton()
-        btn.sizeHint()
 
         genome_size_label = QLabel("- genome size:")
         genome_size_label.setAlignment(Qt.AlignLeft)
@@ -90,7 +86,6 @@ class LabelWidget(QVBoxLayout):
         self.genome_size_input.setFixedWidth(200)
         self.genome_size_input.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         genome_specs_form.addRow(genome_size_label, self.genome_size_input)
-        # genome_specs_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         genome_specs_form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
 
         genome_specs_form.setLabelAlignment(Qt.AlignLeft)
@@ -99,6 +94,7 @@ class LabelWidget(QVBoxLayout):
 
         self.addLayout(genome_specs_form)
 
+        # label and refresh buttons
         label_btn = QPushButton("Label")
         label_btn.clicked.connect(lambda e: label_wrapper())
 
@@ -132,8 +128,9 @@ class LabelWidget(QVBoxLayout):
 
         self.addWidget(self.table)
 
-
     def init_table_from_layer(self):
+        """ Initialize the label table with the data from the label layer (apply regionprops to layer.data)"""
+
         rp = regionprops(self.label_layer.data)
 
         res = np.array(
@@ -178,7 +175,7 @@ class LabelWidget(QVBoxLayout):
 
     def delete_selected_labels(self, e, *, new_label=0):
         indices = np.unique([qi.row() for qi in self.table.selectedIndexes()])
-        labels = self.table.model().dataframe.index[indices]
+        labels = self.table.model().dataframe.index[list(indices)]
 
         print(f"[backspace]: removing indices {indices}")
         replace_label(self.label_layer, labels, new_label)
@@ -208,7 +205,7 @@ class LabelWidget(QVBoxLayout):
                     curr_value = self.table.model().dataframe.loc[label, "area"]
                     row = self.table.model().dataframe.index.get_loc(label)
                     column = self.table.model().dataframe.columns.get_loc("area")
-                    self.table.model().setData(None, curr_value+change.area_diff, row=row, column=column)
+                    self.table.model().setData(None, curr_value + change.area_diff, row=row, column=column)
 
                     if change.area_diff > 0:
                         # label area was extended
