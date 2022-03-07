@@ -103,10 +103,10 @@ class KaryotypeContentWidget(QWidget):
         sizes = [tableModel.data(row=i, column=sizeCol) for i in range(nrows)]
         bboxes = [bbox2shape(b) for b in dataframe.loc[:, "_bbox"]]
 
-        print(
-            f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
-        )
-        print(f"[annotate] bboxes, labels and sizes are {bboxes, labels, sizes}")
+        # print(
+        #     f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
+        # )
+        # print(f"[annotate] bboxes, labels and sizes are {bboxes, labels, sizes}")
 
         # https://napari.org/tutorials/applications/annotate_segmentation.html
         properties = {"label": labels, "size": sizes}

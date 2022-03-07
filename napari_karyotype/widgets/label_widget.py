@@ -51,11 +51,17 @@ class LabelWidget(QVBoxLayout):
                     self.viewer.layers["labelled"].visible = True
                 except KeyError:
                     self.viewer.add_labels(labelled, name="labelled", opacity=0.7)
+                    self.label_layer = get_img("labelled", self.viewer)
+                    self.label_manager = LabelHistoryProcessor(self.label_layer)
+                    self.generate_table()
+                    self.label_layer.events.set_data.connect(lambda x: self.update_table())
 
-            self.label_layer = get_img("labelled", self.viewer)
-            self.label_manager = LabelHistoryProcessor(self.label_layer)
-            self.generate_table()
-            self.label_layer.events.set_data.connect(lambda x: self.update_table())
+            # self.label_layer = get_img("labelled", self.viewer)
+            # self.label_manager = LabelHistoryProcessor(self.label_layer)
+            # self.generate_table()
+            # self.label_layer.events.set_data.connect(lambda x: self.update_table())
+
+            self.init_table_from_layer()
 
         labeling_descr_label = QLabel(
             "2. Apply label function to assign a unique integer id to each connected component:"
@@ -66,8 +72,6 @@ class LabelWidget(QVBoxLayout):
 
         btn = QPushButton()
         btn.sizeHint()
-
-
 
         genome_size_label = QLabel("- genome size:")
         genome_size_label.setAlignment(Qt.AlignLeft)
@@ -91,9 +95,7 @@ class LabelWidget(QVBoxLayout):
 
         genome_specs_form.setLabelAlignment(Qt.AlignLeft)
         genome_specs_form.setFormAlignment(Qt.AlignLeft)
-        genome_specs_form.setContentsMargins(0,5,0,5)
-
-
+        genome_specs_form.setContentsMargins(0, 5, 0, 5)
 
         self.addLayout(genome_specs_form)
 
@@ -106,8 +108,6 @@ class LabelWidget(QVBoxLayout):
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(label_btn)
         buttons_layout.addWidget(refresh_btn)
-
-
 
         self.addLayout(buttons_layout)
         self.setSpacing(5)
@@ -132,7 +132,8 @@ class LabelWidget(QVBoxLayout):
 
         self.addWidget(self.table)
 
-    def generate_table(self):
+
+    def init_table_from_layer(self):
         rp = regionprops(self.label_layer.data)
 
         res = np.array(
@@ -149,6 +150,9 @@ class LabelWidget(QVBoxLayout):
             genomeSize=self.genome_size_input.value(),
         )
 
+    def generate_table(self):
+
+        self.init_table_from_layer()
         self.table.sortByColumn(
             EstimatesTableModel.columns.get_loc("area"), Qt.DescendingOrder
         )
@@ -200,7 +204,11 @@ class LabelWidget(QVBoxLayout):
 
                 elif change.area_diff != 0:
                     # TODO use setData instead
-                    self.table.model().dataframe.loc[label, "area"] += change.area_diff
+                    # self.table.model().dataframe.loc[label, "area"] += change.area_diff
+                    curr_value = self.table.model().dataframe.loc[label, "area"]
+                    row = self.table.model().dataframe.index.get_loc(label)
+                    column = self.table.model().dataframe.columns.get_loc("area")
+                    self.table.model().setData(None, curr_value+change.area_diff, row=row, column=column)
 
                     if change.area_diff > 0:
                         # label area was extended
@@ -231,6 +239,7 @@ class LabelWidget(QVBoxLayout):
                         print(f"label {label} was removed")
 
         self.table.update()
+        # self.table.model()._updateSizeColumn()
         self.table.sortByColumn(
             EstimatesTableModel.columns.get_loc("area"), Qt.DescendingOrder
         )

@@ -83,8 +83,15 @@ class LabelHistoryProcessor:
             nsteps = self.history_queue_length - len(self.label_layer._undo_history)
             nredo = len(self.label_layer._redo_history)
             step = list()
-            for i in range(nredo):
-                step.extend(self.label_layer._redo_history[nsteps - i - 1])
+
+            # old, buggy (?)
+            # for i in range(nredo):
+            #     step.extend(self.label_layer._redo_history[nsteps - i - 1])
+
+            # new, correct (?)
+            for i in range(nsteps):
+                step.extend(self.label_layer._redo_history[- i - 1])
+
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = 0
 
