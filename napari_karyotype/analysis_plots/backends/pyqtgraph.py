@@ -628,6 +628,10 @@ class MainWindow(QtWidgets.QMainWindow):
     def export(self):
         self._hideCrossHair(hide=True)
         exporter = SVGExporter(self.centralWidget().scene(), parent=self)
+        if self.theme == "light":
+            exporter.parameters()["background"] = pg.mkColor(255, 255, 255, 0)
+        else:
+            exporter.parameters()["background"] = pg.mkColor(0, 0, 0, 255)
         exporter.export()
         self._hideCrossHair(hide=False)
 
