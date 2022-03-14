@@ -9,6 +9,7 @@ from .order_widget import OrderWidget
 from .saving_widget import SavingWidget
 from .analysis_widget import AnalysisWidget
 from ..utils import bbox2shape
+import numpy as np
 
 
 # main widget
@@ -117,7 +118,8 @@ class KaryotypeContentWidget(QWidget):
             "color": color,
             "anchor": "upper_left",
             # "anchor": "center",
-            # "rotation":-45
+            # "rotation":-45,
+            "translation": np.array([0.0, 0.0])
         }
 
         if name in self.viewer.layers:
