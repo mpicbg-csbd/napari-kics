@@ -80,17 +80,18 @@ class LabelHistoryProcessor:
             factor = -1
 
             # collect undone actions since last processsing
-            nsteps = self.history_queue_length - len(self.label_layer._undo_history)
-            nredo = len(self.label_layer._redo_history)
+            nsteps = min(
+                self.history_queue_length - len(self.label_layer._undo_history),
+                len(self.label_layer._redo_history),
+            )
+
             step = list()
-
-            # old, buggy (?)
-            # for i in range(nredo):
-            #     step.extend(self.label_layer._redo_history[nsteps - i - 1])
-
-            # new, correct (?)
             for i in range(nsteps):
-                step.extend(self.label_layer._redo_history[- i - 1])
+                step.extend(
+                    self.label_layer._redo_history[
+                        len(self.label_layer._redo_history) - nsteps + i
+                    ]
+                )
 
             self.history_queue_length = len(self.label_layer._undo_history)
             self.history_last_step_length = 0
