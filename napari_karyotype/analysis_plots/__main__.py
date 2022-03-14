@@ -32,6 +32,8 @@ def main():
         unmatched_penalty=args.unmatched_penalty,
         min_scaffold_size=args.min_scaffold_size,
         max_scaffolds=args.max_scaffolds,
+        by_name=args.by_name,
+        no_optimize=args.no_optimize,
         plotlib=args.plotlib,
     )
 

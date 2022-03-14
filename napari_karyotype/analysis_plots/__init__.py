@@ -65,6 +65,8 @@ def analysis_plots(
     unmatched_penalty=2.0,
     min_scaffold_size=0,
     max_scaffolds=-1,
+    by_name=False,
+    no_optimize=False,
     plotlib="pyqtgraph",
 ):
     scaffold_sizes = pd.Series(scaffold_sizes)
@@ -76,10 +78,22 @@ def analysis_plots(
     estimates = pd.Series(estimates)
     estimates.sort_values(ascending=False, inplace=True)
 
-    # matching = list((i, i) for i in range(len(estimates)))
-    matching = find_optimal_assignment(
-        estimates, scaffold_sizes, unmatched_penalty=unmatched_penalty
-    )
+    if by_name:
+        estimates_map = pd.Series(
+            range(len(estimates)), index=estimates.index, name="estimate"
+        )
+        scaffolds_map = pd.Series(
+            range(len(scaffold_sizes)), index=scaffold_sizes.index, name="scaffold"
+        )
+        matching = pd.merge(
+            estimates_map, scaffolds_map, left_index=True, right_index=True
+        )
+    elif no_optimize:
+        matching = np.array([(i, i) for i in range(len(estimates))])
+    else:
+        matching = find_optimal_assignment(
+            estimates, scaffold_sizes, unmatched_penalty=unmatched_penalty
+        )
 
     if matching.shape[0] == 0:
         matching_size = min(len(estimates), len(scaffold_sizes))
@@ -162,6 +176,11 @@ def get_argument_parser():
         help="Estimated chromosome sizes, one per line",
     )
     parser.add_argument(
+        "--by-name",
+        action="store_true",
+        help="Match sizes by names",
+    )
+    parser.add_argument(
         "--example",
         action=LoadExampleAction,
         nargs=0,
@@ -195,6 +214,11 @@ def get_argument_parser():
         default=50,
         metavar="NUM",
         help="Take only the NUM largest scaffolds into account.",
+    )
+    parser.add_argument(
+        "--no-optimize",
+        action="store_true",
+        help="Do not run optimization in matching, i.e. match by independent sort order",
     )
 
     return parser
