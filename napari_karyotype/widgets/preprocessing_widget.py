@@ -1,6 +1,13 @@
 from .input_double_slider import InputDoubleSlider
 from math import sqrt
-from qtpy.QtWidgets import QCheckBox, QLabel, QFormLayout, QVBoxLayout, QPushButton, QSizePolicy
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QLabel,
+    QFormLayout,
+    QVBoxLayout,
+    QPushButton,
+    QSizePolicy,
+)
 from qtpy.QtCore import Qt
 from skimage.color import rgba2rgb, rgb2gray
 from skimage.filters import gaussian
@@ -26,7 +33,6 @@ class PreprocessingWidget(QVBoxLayout):
 
         options_layout = QFormLayout()
 
-
         # blur step description label
         blur_descr_label = QLabel(
             "1. Select an appropriate threshold and blur to segment the image:"
@@ -42,7 +48,6 @@ class PreprocessingWidget(QVBoxLayout):
         invert_option_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.invert_option.stateChanged.connect(lambda _: self.preprocess())
         options_layout.addRow(invert_option_label, self.invert_option)
-
 
         # threshold slider
         self.threshold_slider = InputDoubleSlider(
@@ -84,10 +89,9 @@ class PreprocessingWidget(QVBoxLayout):
 
         # options_layout.addRow(dummy_button1, dummy_button2)
         options_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
-        options_layout.setContentsMargins(0,0,0,0)
+        options_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.layout().setContentsMargins(0,0,0,0)
-
+        self.layout().setContentsMargins(0, 0, 0, 0)
 
     def invert_image(self):
         return self.invert_option.isChecked()

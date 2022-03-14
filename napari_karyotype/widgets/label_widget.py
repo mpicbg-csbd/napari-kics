@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QSpinBox,
     QFormLayout,
-    QSizePolicy
+    QSizePolicy,
 )
 from skimage.measure import regionprops
 
@@ -30,6 +30,7 @@ class LabelWidget(QVBoxLayout):
         # the actual function
         def label(img):
             from scipy.ndimage import label
+
             return label(img)[0]
 
         # wrapper with napari updates
@@ -129,7 +130,7 @@ class LabelWidget(QVBoxLayout):
         self.addWidget(self.table)
 
     def init_table_from_layer(self):
-        """ Initialize the label table with the data from the label layer (apply regionprops to layer.data)"""
+        """Initialize the label table with the data from the label layer (apply regionprops to layer.data)"""
 
         rp = regionprops(self.label_layer.data)
 
@@ -206,7 +207,9 @@ class LabelWidget(QVBoxLayout):
                     curr_value = self.table.model().dataframe.loc[label, "area"]
                     row = self.table.model().dataframe.index.get_loc(label)
                     column = self.table.model().dataframe.columns.get_loc("area")
-                    self.table.model().setData(None, curr_value + change.area_diff, row=row, column=column)
+                    self.table.model().setData(
+                        None, curr_value + change.area_diff, row=row, column=column
+                    )
 
                     if change.area_diff > 0:
                         # label area was extended
