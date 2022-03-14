@@ -126,8 +126,15 @@ class PreprocessingWidget(QVBoxLayout):
             return rgb2gray(rgba2rgb(img))
         elif len(img.shape) == 3 and img.shape[-1] == 3:
             return rgb2gray(img)
-        elif (len(img.shape) == 3 and img.shape[-1] == 1) or (len(img.shape) == 2):
-            return img
+        elif (
+            (len(img.shape) == 3 and img.shape[-1] == 1) or (len(img.shape) == 2)
+        ) and img.dtype.kind in "uif":
+            if img.dtype.kind in "ui":
+                return img / 255.0
+            elif img.dtype.kind == "f":
+                return img
+            else:
+                assert False, "unreachable"
         else:
             raise Exception(
                 f"Cannot process image with type {img.dtype} and shape {img.shape}."
