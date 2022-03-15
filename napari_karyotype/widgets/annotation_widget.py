@@ -6,6 +6,8 @@ from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel, QSpinBox, QHBoxLayo
 from napari_karyotype.utils import get_img
 from qtpy.QtCore import Qt
 
+from ..utils import bbox2shape
+
 
 class AnnotationWidget(QFormLayout):
     def __init__(self, parent, viewer, table):
@@ -14,18 +16,20 @@ class AnnotationWidget(QFormLayout):
         self.viewer = viewer
         self.table = table
 
-        self.default_text_config = {
+        self.text_parameters = {
+            "text": "{size}\n{label}",
             "size": 5,
-            "anchor": napari.layers.utils._text_constants.Anchor.UPPER_LEFT,
-            "translation": np.array([0.0, 0.0]),
-            "rotation": 0
+            "color": "red",
+            "anchor": "upper_left",
+            "rotation": 0,
+            "translation": np.array([0.0, 0.0])
         }
 
         # ----- text size -----
         self.text_size_label = QLabel("- size: ")
         self.text_size_spinner = QSpinBox()
         self.text_size_spinner.setRange(1, 20)
-        self.text_size_spinner.setValue(5)
+        self.text_size_spinner.setValue(self.text_parameters["size"])
         self.text_size_spinner.valueChanged.connect(
             lambda value: setattr(get_img("annotations", self.viewer).text, "size", value)
         )
@@ -34,7 +38,7 @@ class AnnotationWidget(QFormLayout):
         self.text_rotation_label = QLabel("- rotation: ")
         self.text_rotation_dial = QDial()
         self.text_rotation_dial.setRange(0, 360)
-        self.text_rotation_dial.setValue(0)
+        self.text_rotation_dial.setValue(self.text_parameters["rotation"])
         self.text_rotation_dial.valueChanged.connect(
             lambda value: setattr(get_img("annotations", self.viewer).text, "rotation", value)
         )
@@ -83,7 +87,7 @@ class AnnotationWidget(QFormLayout):
         self.text_anchor_combo_box.setCurrentIndex(2)
 
         self.annotate_btn = QPushButton("Annotate")
-        self.annotate_btn.clicked.connect(lambda _: self.parent.annotate())
+        self.annotate_btn.clicked.connect(lambda _: self.annotate())
 
         self.descr_label = QLabel(
             "4. Annotate the image with bounding boxes and areas:"
@@ -96,3 +100,49 @@ class AnnotationWidget(QFormLayout):
         self.addRow(self.annotate_btn)
         self.setLabelAlignment(Qt.AlignLeft)
         self.setSpacing(5)
+
+    def annotate(
+            self,
+            *,
+            update_only=False,
+            name="annotations",
+            edge_color="red",
+            edge_width=2,
+    ):
+        tableModel = self.table.model()
+        if not tableModel.hasData():
+            return
+
+        dataframe = tableModel.dataframe
+        nrows = tableModel.rowCount()
+        labelCol = dataframe.columns.get_loc("label")
+        sizeCol = dataframe.columns.get_loc("size")
+
+        labels = [tableModel.data(row=i, column=labelCol) for i in range(nrows)]
+        sizes = [tableModel.data(row=i, column=sizeCol) for i in range(nrows)]
+        bboxes = [bbox2shape(b) for b in dataframe.loc[:, "_bbox"]]
+
+        print(
+            f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
+        )
+        print(f"[annotate] bboxes, labels and sizes are {bboxes, labels, sizes}")
+
+        # https://napari.org/tutorials/applications/annotate_segmentation.html
+        properties = {"label": labels, "size": sizes}
+
+
+        if name in self.viewer.layers:
+            annotation_layer = self.viewer.layers[name]
+            annotation_layer.data = bboxes
+            annotation_layer.properties = properties
+            annotation_layer.refresh()
+        elif not update_only:
+            self.viewer.add_shapes(
+                bboxes,
+                name=name,
+                face_color="transparent",
+                edge_width=edge_width,
+                edge_color=edge_color,
+                properties=properties,
+                text=self.text_parameters,
+            )
