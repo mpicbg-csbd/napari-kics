@@ -55,25 +55,17 @@ class SavingWidget(QVBoxLayout):
             getattr(self, method)(path)
 
     def _save_images(self, path):
-        for name in ("inverted", "blurred", "thresholded"):
+        for name in ("inverted", "blurred", "thresholded", "labelled"):
             if name in self.viewer.layers:
-                img = self.viewer.layers[name].data
-                io.imsave(f"{path}/{name}.png", img)
-
-        if "labelled" in self.viewer.layers:
-            # save exact labels
-            io.imsave(
-                f"{path}/{name}.tiff",
-                self.viewer.layers[name].data,
-                check_contrast=False,
-            )
-            # save visual labels
-            io.imsave(
-                f"{path}/labelled_color.png",
-                self.viewer.layers["labelled"].get_color(
-                    list(self.viewer.layers["labelled"].data)
-                ),
-            )
+                layer = self.viewer.layers[name]
+                img = layer.data
+                if name == "labelled":
+                    # save exact labels
+                    io.imsave(f"{path}/{name}.tiff", img, check_contrast=False)
+                    # save visual labels
+                    io.imsave(f"{path}/{name}_color.png", layer.get_color(list(img)))
+                else:
+                    io.imsave(f"{path}/{name}.png", img)
 
     def _save_params(self, path):
         params = pd.Series(
