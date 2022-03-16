@@ -2,7 +2,16 @@ import numpy as np
 from skimage.measure import regionprops
 import napari
 
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel, QSpinBox, QHBoxLayout, QDial, QFormLayout, QComboBox
+from qtpy.QtWidgets import (
+    QVBoxLayout,
+    QPushButton,
+    QLabel,
+    QSpinBox,
+    QHBoxLayout,
+    QDial,
+    QFormLayout,
+    QComboBox,
+)
 from napari_karyotype.utils import get_img
 from qtpy.QtCore import Qt
 
@@ -22,7 +31,7 @@ class AnnotationWidget(QFormLayout):
             "color": "red",
             "anchor": "upper_left",
             "rotation": 0,
-            "translation": np.array([0.0, 0.0])
+            "translation": np.array([0.0, 0.0]),
         }
 
         # ----- text size -----
@@ -31,7 +40,9 @@ class AnnotationWidget(QFormLayout):
         self.text_size_spinner.setRange(1, 20)
         self.text_size_spinner.setValue(self.text_parameters["size"])
         self.text_size_spinner.valueChanged.connect(
-            lambda value: setattr(get_img("annotations", self.viewer).text, "size", value)
+            lambda value: setattr(
+                get_img("annotations", self.viewer).text, "size", value
+            )
         )
 
         # ----- text rotation -----
@@ -40,7 +51,9 @@ class AnnotationWidget(QFormLayout):
         self.text_rotation_dial.setRange(0, 360)
         self.text_rotation_dial.setValue(self.text_parameters["rotation"])
         self.text_rotation_dial.valueChanged.connect(
-            lambda value: setattr(get_img("annotations", self.viewer).text, "rotation", value)
+            lambda value: setattr(
+                get_img("annotations", self.viewer).text, "rotation", value
+            )
         )
         self.text_rotation_hbox = QHBoxLayout()
         self.text_rotation_hbox.addWidget(self.text_rotation_label)
@@ -62,7 +75,9 @@ class AnnotationWidget(QFormLayout):
                 y_ = y
 
             translation = np.array([x_, y_])
-            setattr(get_img("annotations", self.viewer).text, "translation", translation)
+            setattr(
+                get_img("annotations", self.viewer).text, "translation", translation
+            )
 
         self.text_translation_x_spinner.valueChanged.connect(
             lambda value: upd_translation(value, None)
@@ -81,8 +96,12 @@ class AnnotationWidget(QFormLayout):
         for anchor in napari.layers.utils._text_constants.Anchor:
             self.text_anchor_combo_box.addItem(str(anchor))
         self.text_anchor_combo_box.currentTextChanged.connect(
-            lambda value: setattr(get_img("annotations", self.viewer).text, "anchor",
-                                  getattr(napari.layers.utils._text_constants.Anchor, value.upper()))
+            lambda value: "annotations" in self.viewer.layers
+            and setattr(
+                self.viewer.layers["annotations"].text,
+                "anchor",
+                getattr(napari.layers.utils._text_constants.Anchor, value.upper()),
+            )
         )
         self.text_anchor_combo_box.setCurrentIndex(2)
 
@@ -102,12 +121,12 @@ class AnnotationWidget(QFormLayout):
         self.setSpacing(5)
 
     def annotate(
-            self,
-            *,
-            update_only=False,
-            name="annotations",
-            edge_color="red",
-            edge_width=2,
+        self,
+        *,
+        update_only=False,
+        name="annotations",
+        edge_color="red",
+        edge_width=2,
     ):
         tableModel = self.table.model()
         if not tableModel.hasData():
@@ -129,7 +148,6 @@ class AnnotationWidget(QFormLayout):
 
         # https://napari.org/tutorials/applications/annotate_segmentation.html
         properties = {"label": labels, "size": sizes}
-
 
         if name in self.viewer.layers:
             annotation_layer = self.viewer.layers[name]
