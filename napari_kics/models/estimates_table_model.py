@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from qtpy import QtCore
 from qtpy.QtGui import QBrush, QColor
-from napari_karyotype.utils.guess_chromosome_labels import ChromosomeLabel
+from ..utils.guess_chromosome_labels import ChromosomeLabel
 
 
 # based on https://www.pythonguis.com/faq/editing-pyqt-tableview/

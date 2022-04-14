@@ -4,14 +4,14 @@ import pandas as pd
 import math
 import sys
 
-from napari_karyotype.analysis_plots import (
+from ..analysis_plots import (
     analysis_plots,
     get_argument_parser,
     read_fasta_index,
     read_tsv_data,
 )
-from napari_karyotype.utils import ChromosomeLabel
-from napari_karyotype.widgets import ClickableLineEdit
+from ..utils import ChromosomeLabel
+from ..widgets import ClickableLineEdit
 from ..global_signals import signals
 from pathlib import Path
 from qtpy.QtWidgets import (

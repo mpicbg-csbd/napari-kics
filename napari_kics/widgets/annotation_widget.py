@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QFormLayout,
     QComboBox,
 )
-from napari_karyotype.utils import get_img
+from ..utils import get_img
 from qtpy.QtCore import Qt
 
 from ..utils import bbox2shape

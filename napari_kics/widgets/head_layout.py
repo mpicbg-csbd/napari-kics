@@ -19,11 +19,9 @@ class HeadLayout(QHBoxLayout):
         logoSvgWidget.setMinimumSize(logo_size, logo_size)
 
         # name and description labels
-        name_label = QLabel("Karyotype")
+        name_label = QLabel("KICS")
         name_label.setFont(QFont("Palatino", 20))
-        description_label = QLabel(
-            "relative chromosome size evaluation from the karyotype images."
-        )
+        description_label = QLabel("Karyotype image-based chromosome size estimation.")
         description_label.setFont(QFont("Palatino", 13))
 
         # text label layout

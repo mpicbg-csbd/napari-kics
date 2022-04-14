@@ -15,8 +15,8 @@ from qtpy.QtWidgets import (
 )
 from skimage.measure import regionprops
 
-from napari_karyotype.models.estimates_table_model import EstimatesTableModel
-from napari_karyotype.utils import get_img, LabelHistoryProcessor, replace_label
+from ..models.estimates_table_model import EstimatesTableModel
+from ..utils import get_img, LabelHistoryProcessor, replace_label
 
 
 class LabelWidget(QVBoxLayout):
@@ -52,7 +52,9 @@ class LabelWidget(QVBoxLayout):
                     self.label_layer = get_img("labelled", self.viewer)
                     self.label_manager = LabelHistoryProcessor(self.label_layer)
                     self.generate_table()
-                    self.label_layer.events.set_data.connect(lambda x: self.update_table())
+                    self.label_layer.events.set_data.connect(
+                        lambda x: self.update_table()
+                    )
 
             # self.label_layer = get_img("labelled", self.viewer)
             # self.label_manager = LabelHistoryProcessor(self.label_layer)

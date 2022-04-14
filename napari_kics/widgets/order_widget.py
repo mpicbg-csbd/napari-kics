@@ -1,8 +1,8 @@
 from qtpy import QtCore
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
-from napari_karyotype.models.estimates_table_model import EstimatesTableModel
-from napari_karyotype.utils import (
+from ..models.estimates_table_model import EstimatesTableModel
+from ..utils import (
     get_img,
     guess_chromosome_labels,
     ChromosomeLabel,

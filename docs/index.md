@@ -1,3 +1,3 @@
-# Welcome to napari-karyotype
+# Welcome to napari-kics
 
-A plugin to evaluate the relative chromosome sizes from karyotype images.
+A plugin to estimate chromosome sizes from karyotype images.

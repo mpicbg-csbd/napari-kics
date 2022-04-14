@@ -9,7 +9,7 @@ from pulp import GLPK, LpMaximize, LpMinimize, LpProblem, LpStatus, LpVariable
 import numpy as np
 import pandas as pd
 from importlib import import_module
-from napari_karyotype.analysis_plots import *
+from ..analysis_plots import *
 import logging
 
 log = logging.getLogger(__name__)

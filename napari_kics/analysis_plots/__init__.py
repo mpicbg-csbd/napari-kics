@@ -155,7 +155,7 @@ def get_argument_parser():
 
     prog = os.path.basename(sys.argv[0])
     if prog == "__main__.py":
-        prog = f"{sys.executable} -m napari_karyotype.analysis_plots"
+        prog = f"{sys.executable} -m napari_kics.analysis_plots"
 
     parser = ArgumentParser(
         prog=prog,

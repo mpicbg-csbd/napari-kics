@@ -1,4 +1,4 @@
-# from napari_karyotype import threshold, image_arithmetic
+# from napari_kics import threshold, image_arithmetic
 
 # add your tests here...
 

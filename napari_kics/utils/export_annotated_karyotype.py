@@ -47,7 +47,7 @@ def export_svg(
     svg_width=1000,
     color="red",
     title="Annotated Karyotype",
-    desc="Created with napari-karyotype.",
+    desc="Created with napari-kics.",
     stroke_width=1,
     font_size=1,
 ):

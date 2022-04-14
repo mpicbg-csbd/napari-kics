@@ -1,5 +1,5 @@
 import numpy as np
-from napari_karyotype import napari_get_reader
+from .. import napari_get_reader
 
 
 # tmp_path is a pytest fixture
