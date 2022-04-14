@@ -58,7 +58,7 @@ class IndexedInterval(namedtuple("IndexedInterval", ["begin", "end", "index"])):
 
     def overlaps(self, other, *, strict=False):
         if self.begin > other.begin:
-            return other.overlaps(begin, strict=strict)
+            return other.overlaps(self, strict=strict)
         if strict:
             return other.begin < self.end and not self.empty and not other.empty
         else:

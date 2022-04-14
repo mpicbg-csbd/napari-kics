@@ -3,6 +3,7 @@ import pandas as pd
 import pyqtgraph as pg
 import pyqtgraph.exporters
 from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
+from pyqtgraph.icons import invisibleEye
 from .. import size_correlation, get_initial_bounds
 from collections import namedtuple
 import logging
