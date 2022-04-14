@@ -1,5 +1,6 @@
 from .guess_chromosome_labels import *
 from .label_history_processor import *
+import numpy as np
 
 
 def get_img(name, viewer):

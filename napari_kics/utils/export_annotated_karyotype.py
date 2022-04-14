@@ -5,7 +5,8 @@ import base64
 
 __svg_template = """\
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2" baseProfile="tiny" viewBox="0 0 {width} {height}" width="{svg_width}" height="{svg_height}">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.2"
+ baseProfile="tiny" viewBox="0 0 {width} {height}" width="{svg_width}" height="{svg_height}">
     <title>{title}</title>
     <desc>{desc}</desc>
     <style>
@@ -20,9 +21,11 @@ __svg_template = """\
     </defs>
     <g>
         <g id="karyotype">
-            <image x="0" y="0" width="{width}" height="{height}" preserveAspectRatio="none" xlink:href="data:image/png;base64,{karyotype}"/>
+            <image x="0" y="0" width="{width}" height="{height}" preserveAspectRatio="none"
+             xlink:href="data:image/png;base64,{karyotype}"/>
         </g>
-        <g id="annotations" fill="{color}" stroke="{color}" stroke-width="{stroke_width}" font-size="{font_size}">
+        <g id="annotations" fill="{color}" stroke="{color}" stroke-width="{stroke_width}"
+         font-size="{font_size}">
             {annotations}
         </g>
     </g>
@@ -51,7 +54,6 @@ def export_svg(
     stroke_width=1,
     font_size=1,
 ):
-    karyotype_b64 = None
     height = karyotype.shape[0]
     width = karyotype.shape[1]
     scale = svg_width / width
@@ -152,7 +154,7 @@ __test_data = {
 
 
 def __test():
-    outsvg = f"./anno-test.svg"
+    outsvg = "./anno-test.svg"
     karyotype = io.imread(__test_data["image"])
     tags = [d[0] for d in __test_data["annotations"]]
     areas = [d[1] for d in __test_data["annotations"]]

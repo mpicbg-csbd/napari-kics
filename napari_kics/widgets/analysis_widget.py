@@ -1,8 +1,6 @@
-from skimage import io
 import numpy as np
 import pandas as pd
 import math
-import sys
 
 from ..analysis_plots import (
     analysis_plots,
@@ -13,7 +11,6 @@ from ..analysis_plots import (
 from ..utils import ChromosomeLabel
 from ..widgets import ClickableLineEdit
 from ..global_signals import signals
-from pathlib import Path
 from qtpy.QtWidgets import (
     QVBoxLayout,
     QFormLayout,

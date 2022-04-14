@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from qtpy.QtWidgets import *
+from qtpy.QtWidgets import QScrollArea, QWidget, QVBoxLayout
 
 from .annotation_widget import AnnotationWidget
 from .preprocessing_widget import PreprocessingWidget
@@ -8,8 +8,6 @@ from .label_widget import LabelWidget
 from .order_widget import OrderWidget
 from .saving_widget import SavingWidget
 from .analysis_widget import AnalysisWidget
-
-import numpy as np
 
 
 # main widget
@@ -83,8 +81,6 @@ class KaryotypeContentWidget(QWidget):
         self.viewer.window.qt_viewer.dockConsole.visibilityChanged.connect(
             self._ensure_populate_console
         )
-
-
 
     def _ensure_populate_console(self):
         if not self._console_populated:

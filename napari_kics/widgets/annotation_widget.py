@@ -1,9 +1,7 @@
 import numpy as np
-from skimage.measure import regionprops
 import napari
 
 from qtpy.QtWidgets import (
-    QVBoxLayout,
     QPushButton,
     QLabel,
     QSpinBox,

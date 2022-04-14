@@ -1,13 +1,11 @@
 from qtpy.QtWidgets import (
-    QAbstractSlider,
     QDoubleSpinBox,
     QHBoxLayout,
     QSizePolicy,
     QSlider,
-    QSpinBox,
     QWidget,
 )
-from qtpy.QtCore import Qt, Signal, QSignalBlocker
+from qtpy.QtCore import Signal, QSignalBlocker
 from math import ceil, floor
 
 
@@ -54,10 +52,8 @@ class InputDoubleSlider(QWidget):
         self.setLayout(QHBoxLayout())
         self.layout().addWidget(self.slider)
         self.layout().addWidget(self.input)
-        self.layout().setContentsMargins(0,0,0,0)
+        self.layout().setContentsMargins(0, 0, 0, 0)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-
 
     __delegate2slider = {
         "orientation",

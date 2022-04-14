@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-from logging import basicConfig, getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 

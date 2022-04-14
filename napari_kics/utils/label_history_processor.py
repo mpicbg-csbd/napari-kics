@@ -1,5 +1,4 @@
 import numpy as np
-from collections import namedtuple
 
 
 class ChangeRecord:
@@ -44,7 +43,7 @@ class LabelHistoryProcessor:
         self.history_last_step_length = 0
 
     def recent_changes(self):
-        print(f"[recent_changes]: entry")
+        print("[recent_changes]: entry")
         # print(f"[recent_changes]: undo history is {self.label_layer._undo_history}")
         # print(f"[recent_changes]: redo history is {self.label_layer._redo_history}")
 

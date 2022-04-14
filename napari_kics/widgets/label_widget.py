@@ -36,7 +36,7 @@ class LabelWidget(QVBoxLayout):
         # wrapper with napari updates
         def label_wrapper(refresh=False):
             if not refresh:
-                if not "thresholded" in self.viewer.layers:
+                if "thresholded" not in self.viewer.layers:
                     self.make_thresholded_image()
 
                 input_image = get_img("thresholded", self.viewer).data

@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-from pulp import GLPK, LpMaximize, LpMinimize, LpProblem, LpStatus, LpVariable
+from pulp import LpMinimize, LpProblem, LpVariable
 from importlib import import_module
 
-from logging import basicConfig, getLogger
+from logging import getLogger
 
 log = getLogger(__name__)
 

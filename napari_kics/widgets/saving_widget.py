@@ -3,7 +3,6 @@ import pandas as pd
 
 from ..widgets import ClickableLineEdit
 from ..utils.export_annotated_karyotype import export_svg
-from pathlib import Path
 from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari.utils import progress
 

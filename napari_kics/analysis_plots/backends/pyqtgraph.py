@@ -683,11 +683,7 @@ class MainWindow(QtWidgets.QMainWindow):
             )
         )
 
-        msgBox = QtGui.QMessageBox.information(
-            self,
-            "Help",
-            helpText,
-        )
+        QtGui.QMessageBox.information(self, "Help", helpText)
 
     def _hideCrossHair(self, hide=True):
         for hline in self.__matrixCrosshairHLines:
@@ -784,7 +780,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def updateScaffoldBarsItem(self):
         BarSpec = namedtuple("BarSpec", ["y0", "y1"])
 
-        numMatched = self.matching.shape[0]
         bars = dict()
         for scaffIdx, chrIdx in self.matching:
             lastBars = bars.get(chrIdx, [])
@@ -839,7 +834,7 @@ class CorrelationMatrixItem(pg.ImageItem):
                 return
 
         if (
-            not self.handleMouseClick is None
+            self.handleMouseClick is not None
             and ev.button() == QtCore.Qt.MouseButton.LeftButton
         ):
             i, j = ev.pos().y(), ev.pos().x()
@@ -934,7 +929,7 @@ class SVGExporter(pg.exporters.SVGExporter):
     def fileSaveDialog(self, filter=None, opts=None):
         if opts is None:
             opts = {}
-        if not self.parent is None:
+        if self.parent is not None:
             self.fileDialog = pg.FileDialog(self.parent)
         else:
             self.fileDialog = pg.FileDialog()

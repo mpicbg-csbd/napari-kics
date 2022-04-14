@@ -1,6 +1,6 @@
 from qtpy import QtCore
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel, QMessageBox
+from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel
 from ..models.estimates_table_model import EstimatesTableModel
 from ..utils import (
     get_img,
@@ -8,7 +8,7 @@ from ..utils import (
     ChromosomeLabel,
     replace_label,
 )
-from math import floor, hypot
+from math import hypot
 from skimage.measure import regionprops
 
 import numpy as np
@@ -60,8 +60,8 @@ class OrderWidget(QVBoxLayout):
         print("[guess_chromosome_labels]: guessing...")
         self.label_layer = get_img("labelled", self.viewer)
         props = regionprops(self.label_layer.data)
-        bounding_boxes = [rp.bbox for rp in regionprops(self.label_layer.data)]
-        img_labels = [rp.label for rp in regionprops(self.label_layer.data)]
+        bounding_boxes = [rp.bbox for rp in props]
+        img_labels = [rp.label for rp in props]
         try:
             chr_labels = guess_chromosome_labels(bounding_boxes)
         except Exception as e:
@@ -82,7 +82,7 @@ class OrderWidget(QVBoxLayout):
     def order_drag_callback(self, label_layer, event):
         """label layer drag callback to remove the labels that have been crossed-out (added to the self.order list)"""
 
-        print(f"[drag_callback]: drag started")
+        print("[drag_callback]: drag started")
         curr_order = []
 
         def maybe_add_label_at(position):
@@ -125,7 +125,7 @@ class OrderWidget(QVBoxLayout):
 
         while event.type == "mouse_move":
             if "Shift" in event.modifiers:
-                if not event.last_event is None:
+                if event.last_event is not None:
                     add_labels_on_line(event.last_event.position, event.position)
                 maybe_add_label_at(event.position)
             yield
@@ -137,7 +137,7 @@ class OrderWidget(QVBoxLayout):
     def parse_recent_step(self, label_layer):
         """a function to parse the recent history step to extract the recent changes in the label layer"""
 
-        print(f"parse recent step")
+        print("parse recent step")
 
         print(f"undo history\n {label_layer._undo_history}")
         print(f"redo history\n {label_layer._redo_history}")

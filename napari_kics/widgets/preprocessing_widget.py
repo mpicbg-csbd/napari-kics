@@ -5,8 +5,6 @@ from qtpy.QtWidgets import (
     QLabel,
     QFormLayout,
     QVBoxLayout,
-    QPushButton,
-    QSizePolicy,
 )
 from qtpy.QtCore import Qt
 from skimage.color import rgba2rgb, rgb2gray

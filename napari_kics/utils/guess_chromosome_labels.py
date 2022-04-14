@@ -1,6 +1,5 @@
 from collections import namedtuple
 import numpy as np
-import math
 import re
 
 
@@ -447,9 +446,9 @@ def run_guess_tests():
     for test_case in test_cases:
         lbls = guess_chromosome_labels(test_case["bboxes"])
         combined = list(zip(lbls, test_case["bboxes"]))
-        combined.sort(key=lambda l: (l[0].row, l[0].col, l[1][1]))
+        combined.sort(key=lambda x: (x[0].row, x[0].col, x[1][1]))
 
-        if [l for l, b in combined] != test_case["expected"]:
+        if [label for label, _ in combined] != test_case["expected"]:
             print(f"test case {test_case['name']} failed:")
             print()
             print(str(combined[0][0]), end="")

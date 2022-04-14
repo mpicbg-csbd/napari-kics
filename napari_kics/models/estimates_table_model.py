@@ -259,7 +259,7 @@ class EstimatesTableModel(QtCore.QAbstractTableModel):
         self.layoutAboutToBeChanged.emit()
         column = self.columns[column]
         if column == "label":
-            key = lambda col: col.astype(str)
+            key = lambda col: col.astype(str)  # noqa: E731
         else:
             key = None
 
