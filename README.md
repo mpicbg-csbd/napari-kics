@@ -2,12 +2,11 @@
 
 ![napari-kics](./docs/banner.png?sanitize=true&raw=true)
 
-[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
+[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme)
 [![License](https://img.shields.io/pypi/l/napari-kics.svg?color=green)](./LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/napari-kics.svg?color=green)](https://pypi.org/project/napari-kics)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-kics.svg?color=green)](https://python.org)
-[![tests](https://github.com/adibrov/napari-kics/workflows/tests/badge.svg)](https://github.com/adibrov/napari-kics/actions)
-[![codecov](https://codecov.io/gh/adibrov/napari-kics/branch/master/graph/badge.svg)](https://codecov.io/gh/adibrov/napari-kics)
+[![Python package](https://github.com/mpicbg-csbd/napari-kics/actions/workflows/python-package.yml/badge.svg)](https://github.com/mpicbg-csbd/napari-kics/actions/workflows/python-package.yml)
 
 
 > A plugin to estimate chromosome sizes from karyotype images.
@@ -31,10 +30,18 @@
 You can install `napari-kics` via [pip]:
 
 ```sh
-git clone https://github.com/mpicbg-csbd/napari-kics.git
-cd napari-kics
-pip install -e .
+pip install napari-kics
 ```
+
+This will install all required dependencies as well. We recommend installing it in a virtual environment, e.g. using [conda]:
+
+```sh
+conda create -n kics python
+conda activate kics
+pip install napari-kics
+```
+
+We recommend using [mamba] as a faster alternative to conda.
 
 
 ## Usage
@@ -65,6 +72,17 @@ karyotype-analysis-plots --example
 ```
 
 
+## Development
+
+You can setup a local development environment for `napari-kics` via [pip]:
+
+```sh
+git clone https://github.com/mpicbg-csbd/napari-kics.git
+cd napari-kics
+pip install -e .
+```
+
+
 ## License
 
 Distributed under the terms of the [BSD-3] license,
@@ -89,6 +107,8 @@ contribution.
 [Cookiecutter]: https://github.com/audreyr/cookiecutter
 [napari]: https://github.com/napari/napari
 [tox]: https://tox.readthedocs.io/en/latest/
+[conda]: https://www.anaconda.com/products/distribution
+[mamba]: https://github.com/mamba-org/mamba
 [pip]: https://pypi.org/project/pip/
 [PyPI]: https://pypi.org/
 [file an issue]: https://github.com/mpicbg-csbd/napari-kics/issues
