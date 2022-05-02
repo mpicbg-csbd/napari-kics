@@ -1,6 +1,6 @@
 # napari-kics
 
-![napari-kics](./docs/banner.png?sanitize=true&raw=true)
+![napari-kics](https://github.com/mpicbg-csbd/napari-kics/raw/main/docs/banner.png?sanitize=true&raw=true)
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme)
 [![License](https://img.shields.io/pypi/l/napari-kics.svg?color=green)](./LICENSE)
