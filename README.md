@@ -72,15 +72,11 @@ karyotype-analysis-plots --example
 ```
 
 
-## Development
+## Citation
 
-You can setup a local development environment for `napari-kics` via [pip]:
-
-```sh
-git clone https://github.com/mpicbg-csbd/napari-kics.git
-cd napari-kics
-pip install -e .
-```
+> Arne Ludwig, Alexandr Dibrov, Gene Myers, Martin Pippel.
+> Estimating chromosome sizes from karyotype images enables validation of
+> *de novo* assemblies. To be published.
 
 
 ## License
@@ -98,7 +94,14 @@ If you encounter any problems, please [file an issue] along with a detailed desc
 
 Contributions are very welcome. Please [file a pull request] with your
 contribution.
-<!-- Tests can be run with [tox], please ensure the coverage at least stays the same before you submit a pull request. -->
+
+You can setup a local development environment for `napari-kics` via [pip]:
+
+```sh
+git clone https://github.com/mpicbg-csbd/napari-kics.git
+cd napari-kics
+pip install -e .
+```
 
 
 [BSD-3]: http://opensource.org/licenses/BSD-3-Clause
