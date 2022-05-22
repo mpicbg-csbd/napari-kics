@@ -25,7 +25,7 @@ repos:
 
       - id: napari-plugin-test
         name: napari-plugin-test
-        stages: [push]
+        stages: [commit, push]
         language: system
         entry: pipenv run napari -v --plugin-info -w napari-kics
         types: [python]
@@ -41,7 +41,7 @@ repos:
 
       - id: pytest
         name: pytest
-        stages: [commit]
+        stages: [commit, push]
         language: system
         entry: pipenv run pytest
         types: [python]
