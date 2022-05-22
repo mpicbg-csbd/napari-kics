@@ -43,6 +43,9 @@ jobs:
     - name: Check formatting with black
       run: |
         black --check --diff .
+    - name: Check for plugin errors
+      run: |
+        napari -v --plugin-info -w napari-kics
 
   deploy:
     needs: [test]
