@@ -11,6 +11,10 @@
 
 > A plugin to estimate chromosome sizes from karyotype images.
 
+![demo animation of napari-kics](./docs/demo.gif?sanitize=true&raw=true)
+
+---
+
 <small>*This [napari] plugin was generated with [Cookiecutter] using with [@napari]'s [cookiecutter-napari-plugin] template.*</small>
 
 
