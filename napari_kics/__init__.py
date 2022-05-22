@@ -1,4 +1,4 @@
-__version__ = "0.0.3rc4"
+__version__ = "0.0.3rc5"
 
 
 from .widget_loader import (
