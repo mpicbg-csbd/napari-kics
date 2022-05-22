@@ -1,17 +1,13 @@
-from qtpy import QtCore
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QPushButton, QLabel
-from ..models.estimates_table_model import EstimatesTableModel
-from ..utils import (
-    get_img,
-    guess_chromosome_labels,
-    ChromosomeLabel,
-    replace_label,
-)
 from math import hypot
-from skimage.measure import regionprops
 
 import numpy as np
+from qtpy import QtCore
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout
+from skimage.measure import regionprops
+
+from ..models.estimates_table_model import EstimatesTableModel
+from ..utils import ChromosomeLabel, get_img, guess_chromosome_labels, replace_label
 
 
 class OrderWidget(QVBoxLayout):
@@ -80,7 +76,8 @@ class OrderWidget(QVBoxLayout):
         print("[guess_chromosome_labels]: success")
 
     def order_drag_callback(self, label_layer, event):
-        """label layer drag callback to remove the labels that have been crossed-out (added to the self.order list)"""
+        """label layer drag callback to remove the labels that have been
+        crossed-out (added to the self.order list)"""
 
         print("[drag_callback]: drag started")
         curr_order = []
@@ -135,7 +132,8 @@ class OrderWidget(QVBoxLayout):
             self.order_new.append(curr_order)
 
     def parse_recent_step(self, label_layer):
-        """a function to parse the recent history step to extract the recent changes in the label layer"""
+        """a function to parse the recent history step to extract the recent
+        changes in the label layer"""
 
         print("parse recent step")
 
@@ -200,7 +198,8 @@ class OrderWidget(QVBoxLayout):
         )
 
     def deactivate_ordering_mode(self):
-        """remove the auxiliary layer and update the current labels according to the generated relabeling"""
+        """remove the auxiliary layer and update the current labels according
+        to the generated relabeling"""
 
         # delete the auxiliary ordering layer
         ind = self.viewer.layers.index(self.order_layer)

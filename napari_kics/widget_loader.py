@@ -22,8 +22,10 @@ def napari_experimental_provide_dock_widget():
 
 
 def load_sample_data():
-    from skimage import io
     from pathlib import Path
+
+    from skimage import io
+
     from .global_signals import signals
 
     data_base = f"{Path(__file__).parent}/resources/data/mHomSap_male"

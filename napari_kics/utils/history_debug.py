@@ -42,7 +42,6 @@ if __name__ == "__main__":
     labels = 255 - labels.reshape(image_shape)
 
     label_layer = viewer.add_labels(labels)
-    # label_layer.events.set_data.connect(lambda x: print_history(label_layer._undo_history))
     label_layer.events.set_data.connect(
         lambda x: print_last_step(label_layer._undo_history)
     )

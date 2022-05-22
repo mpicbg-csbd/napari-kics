@@ -1,15 +1,12 @@
-from .input_double_slider import InputDoubleSlider
 from math import sqrt
-from qtpy.QtWidgets import (
-    QCheckBox,
-    QLabel,
-    QFormLayout,
-    QVBoxLayout,
-)
-from qtpy.QtCore import Qt
-from skimage.color import rgba2rgb, rgb2gray
-from skimage.filters import gaussian
 from os import environ
+
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox, QFormLayout, QLabel, QVBoxLayout
+from skimage.color import rgb2gray, rgba2rgb
+from skimage.filters import gaussian
+
+from .input_double_slider import InputDoubleSlider
 
 
 class PreprocessingWidget(QVBoxLayout):
@@ -191,7 +188,8 @@ class PreprocessingWidget(QVBoxLayout):
 
         if self.last_threshold == self.threshold():
             print(
-                f"[PreprocessingWidget] skipping threshold (threshold={self.threshold()})"
+                "[PreprocessingWidget] skipping threshold",
+                f"(threshold={self.threshold()})",
             )
             return
 

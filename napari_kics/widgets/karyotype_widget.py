@@ -1,13 +1,13 @@
 from PyQt5.QtCore import Qt
-from qtpy.QtWidgets import QScrollArea, QWidget, QVBoxLayout
+from qtpy.QtWidgets import QScrollArea, QVBoxLayout, QWidget
 
+from .analysis_widget import AnalysisWidget
 from .annotation_widget import AnnotationWidget
-from .preprocessing_widget import PreprocessingWidget
 from .head_layout import HeadLayout
 from .label_widget import LabelWidget
 from .order_widget import OrderWidget
+from .preprocessing_widget import PreprocessingWidget
 from .saving_widget import SavingWidget
-from .analysis_widget import AnalysisWidget
 
 
 # main widget

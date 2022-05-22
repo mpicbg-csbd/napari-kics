@@ -3,20 +3,20 @@ from os import environ
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QTableView,
     QAbstractItemView,
-    QPushButton,
-    QHBoxLayout,
-    QVBoxLayout,
-    QLabel,
-    QSpinBox,
     QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
     QSizePolicy,
+    QSpinBox,
+    QTableView,
+    QVBoxLayout,
 )
 from skimage.measure import regionprops
 
 from ..models.estimates_table_model import EstimatesTableModel
-from ..utils import get_img, LabelHistoryProcessor, replace_label
+from ..utils import LabelHistoryProcessor, get_img, replace_label
 
 
 class LabelWidget(QVBoxLayout):
@@ -65,7 +65,8 @@ class LabelWidget(QVBoxLayout):
 
         # widget head label
         labeling_descr_label = QLabel(
-            "2. Apply label function to assign a unique integer id to each connected component:"
+            "2. Apply label function to assign a unique integer id to each            "
+            " connected component:"
         )
         self.addWidget(labeling_descr_label)
 
@@ -114,7 +115,8 @@ class LabelWidget(QVBoxLayout):
         # initializing the table with a dummy (empty) dataframe
         self.table = QTableView()
         self.table.setSortingEnabled(True)
-        # select rows only: https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
+        # select rows only:
+        # https://stackoverflow.com/questions/3861296/how-to-select-row-in-qtableview
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setMinimumHeight(300)
 
@@ -132,7 +134,8 @@ class LabelWidget(QVBoxLayout):
         self.addWidget(self.table)
 
     def init_table_from_layer(self):
-        """Initialize the label table with the data from the label layer (apply regionprops to layer.data)"""
+        """Initialize the label table with the data from the label layer
+        (apply regionprops to layer.data)"""
 
         rp = regionprops(self.label_layer.data)
 
@@ -189,7 +192,7 @@ class LabelWidget(QVBoxLayout):
         print(f"[update_table] recent_changes is {recent_changes}")
 
         with self.table.model().bulkChanges() as bulkChanges:
-            for (label, change) in recent_changes.items():
+            for label, change in recent_changes.items():
                 if label == 0:
                     # ignore background label
                     continue
@@ -205,7 +208,6 @@ class LabelWidget(QVBoxLayout):
 
                 elif change.area_diff != 0:
                     # TODO use setData instead
-                    # self.table.model().dataframe.loc[label, "area"] += change.area_diff
                     curr_value = self.table.model().dataframe.loc[label, "area"]
                     row = self.table.model().dataframe.index.get_loc(label)
                     column = self.table.model().dataframe.columns.get_loc("area")

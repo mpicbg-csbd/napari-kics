@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from qtpy import QtCore
 from qtpy.QtGui import QBrush, QColor
+
 from ..utils.guess_chromosome_labels import ChromosomeLabel
 
 

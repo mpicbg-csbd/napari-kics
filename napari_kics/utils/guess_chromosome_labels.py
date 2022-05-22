@@ -1,6 +1,7 @@
-from collections import namedtuple
-import numpy as np
 import re
+from collections import namedtuple
+
+import numpy as np
 
 
 class ChromosomeLabel(namedtuple("ChromosomeLabel", ["major", "minor", "row", "col"])):

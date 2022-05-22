@@ -1,9 +1,10 @@
-import numpy as np
-import pandas as pd
+from logging import getLogger
+
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 from matplotlib.colors import LogNorm
-from logging import getLogger
 
 log = getLogger(__name__)
 

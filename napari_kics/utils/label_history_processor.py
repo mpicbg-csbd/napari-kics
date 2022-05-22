@@ -29,7 +29,10 @@ class ChangeRecord:
             )
 
     def __str__(self):
-        return f"ChangeRecord(area_diff={self.area_diff},xs=<{len(self.xs)} elements>,ys=<{len(self.ys)} elements>)"
+        return (
+            f"ChangeRecord(area_diff={self.area_diff},"
+            f"xs=<{len(self.xs)} elements>,ys=<{len(self.ys)} elements>)"
+        )
 
     def __repr__(self):
         return str(self)

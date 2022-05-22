@@ -1,10 +1,10 @@
-from skimage import io
 import pandas as pd
-
-from ..widgets import ClickableLineEdit
-from ..utils.export_annotated_karyotype import export_svg
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QLabel
 from napari.utils import progress
+from qtpy.QtWidgets import QLabel, QPushButton, QVBoxLayout
+from skimage import io
+
+from ..utils.export_annotated_karyotype import export_svg
+from ..widgets import ClickableLineEdit
 
 
 class SavingWidget(QVBoxLayout):

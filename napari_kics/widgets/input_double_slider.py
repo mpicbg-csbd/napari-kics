@@ -1,12 +1,7 @@
-from qtpy.QtWidgets import (
-    QDoubleSpinBox,
-    QHBoxLayout,
-    QSizePolicy,
-    QSlider,
-    QWidget,
-)
-from qtpy.QtCore import Signal, QSignalBlocker
 from math import ceil, floor
+
+from qtpy.QtCore import QSignalBlocker, Signal
+from qtpy.QtWidgets import QDoubleSpinBox, QHBoxLayout, QSizePolicy, QSlider, QWidget
 
 
 class InputDoubleSlider(QWidget):

@@ -1,6 +1,15 @@
+import math
+
 import numpy as np
 import pandas as pd
-import math
+from qtpy.QtWidgets import (
+    QDoubleSpinBox,
+    QFormLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
 
 from ..analysis_plots import (
     analysis_plots,
@@ -8,17 +17,9 @@ from ..analysis_plots import (
     read_fasta_index,
     read_tsv_data,
 )
+from ..global_signals import signals
 from ..utils import ChromosomeLabel
 from ..widgets import ClickableLineEdit
-from ..global_signals import signals
-from qtpy.QtWidgets import (
-    QVBoxLayout,
-    QFormLayout,
-    QPushButton,
-    QLabel,
-    QDoubleSpinBox,
-    QSpinBox,
-)
 
 
 class AnalysisWidget(QVBoxLayout):

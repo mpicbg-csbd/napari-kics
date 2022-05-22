@@ -1,12 +1,14 @@
+import logging
+from collections import namedtuple
+
 import numpy as np
 import pandas as pd
 import pyqtgraph as pg
 import pyqtgraph.exporters
-from pyqtgraph.Qt import QtWidgets, mkQApp, QtGui, QtCore
 from pyqtgraph.icons import invisibleEye
-from .. import size_correlation, get_initial_bounds
-from collections import namedtuple
-import logging
+from pyqtgraph.Qt import QtCore, QtGui, QtWidgets, mkQApp
+
+from .. import get_initial_bounds, size_correlation
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +17,8 @@ ReturnType = namedtuple("ReturnType", ["matching"])
 
 
 def do_plot(estimates, scaffoldSizes, initialMatching, **kwargs):
-    # TODO show tooltip on hover with scaff/estimate name/index, size diff, abs. sizes, ...
+    # TODO show tooltip on hover with scaff/estimate name/index, size diff,
+    #   abs. sizes, ...
 
     app = QtWidgets.QApplication.instance()
     is_running = app is not None
@@ -229,7 +232,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalCorrelationPlotItem.hideButtons()
         # remove data padding
         self.totalCorrelationPlotItem.setDefaultPadding(0.0)
-        # show full frame, label tick marks at top side, with some extra space for labels
+        # show full frame, label tick marks at top side, with some extra space
+        # for labels
         self.totalCorrelationPlotItem.showAxes(
             True, showValues=(True, True, False, False), size=self.matrixAxisLabelSize
         )
@@ -245,7 +249,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.totalCorrelationPlotItem.setFixedHeight(self.matrixBorderSize[1])
 
     def _populateTotalCorrelationItem(self):
-        # prepare transform to center the corner element on the origin, for any assigned image
+        # prepare transform to center the corner element on the origin, for
+        # any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
         self.totalCorrelationItem = pg.ImageItem()
@@ -283,7 +288,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.selectionPerScaffoldPlotItem.hideButtons()
         # remove data padding
         self.selectionPerScaffoldPlotItem.setDefaultPadding(0.0)
-        # show full frame, label tick marks at top side, with some extra space for labels
+        # show full frame, label tick marks at top side, with some extra space
+        # for labels
         self.selectionPerScaffoldPlotItem.showAxes(
             True,
             showValues=(False, True, False, False),
@@ -312,7 +318,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.selectionPerScaffoldLegendItem.setFixedHeight(self.matrixBorderSize[1])
 
     def _populateSelectionPerScaffoldItem(self):
-        # prepare transform to center the corner element on the origin, for any assigned image
+        # prepare transform to center the corner element on the origin, for
+        # any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
         self.selectionPerScaffoldItem = pg.ImageItem()
@@ -376,7 +383,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.correlationPerChromosomePlotItem.invertY(True)
         # remove data padding
         self.correlationPerChromosomePlotItem.setDefaultPadding(0.0)
-        # show full frame, label tick marks at left side, with some extra space for labels
+        # show full frame, label tick marks at left side, with some extra
+        # space for labels
         self.correlationPerChromosomePlotItem.showAxes(
             True,
             showValues=(True, False, False, False),
@@ -397,7 +405,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.correlationPerChromosomePlotItem.setFixedWidth(self.matrixBorderSize[0])
 
     def _populateCorrelationPerChromosomeItem(self):
-        # prepare transform to center the corner element on the origin, for any assigned image
+        # prepare transform to center the corner element on the origin, for
+        # any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
         self.correlationPerChromosomeItem = pg.ImageItem()
@@ -415,7 +424,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.matrixPlotItem.invertY(True)
         # remove data padding
         self.matrixPlotItem.setDefaultPadding(0.0)
-        # show full frame, label tick marks at top side, with some extra space for labels
+        # show full frame, label tick marks at top side, with some extra space
+        # for labels
         self.matrixPlotItem.showAxes(True, showValues=False)
         self.matrixPlotItem.setXLink("selectionPerScaffold")
         self.matrixPlotItem.setYLink("correlationPerChromosome")
@@ -428,7 +438,8 @@ class MainWindow(QtWidgets.QMainWindow):
             )
 
     def _populateMatrixPlotItem(self):
-        # prepare transform to center the corner element on the origin, for any assigned image
+        # prepare transform to center the corner element on the origin, for
+        # any assigned image
         alignPixelTransform = QtGui.QTransform().translate(-0.5, -0.5)
 
         self.correlationMatrixItem = CorrelationMatrixItem(
@@ -559,7 +570,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 "bottom": LabelAxisItem("bottom", self.estimates.index),
             },
         )
-        # show full frame, label tick marks at bottom side, with some extra space for labels
+        # show full frame, label tick marks at bottom side, with some extra
+        # space for labels
         self.directComparisonPlotItem.showAxes(
             True,
             showValues=(True, False, False, True),
@@ -861,7 +873,8 @@ class CorrelationMatrixItem(pg.ImageItem):
         scaff = self.scaffoldNames[j]
 
         self.statusItem.setTitle(
-            f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff}  score: {self.matchingScore}"
+            f"chr: {chrom}  scaff: {scaff}  absdiff: {absdiff} ",
+            f"score: {self.matchingScore}",
         )
 
 

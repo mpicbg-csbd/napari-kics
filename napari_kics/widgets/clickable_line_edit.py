@@ -3,9 +3,10 @@
 # ------------------------------------------------------------------------
 # based on https://stackoverflow.com/questions/46671067/clear-qlineedit-on-click-event
 
-from qtpy.QtWidgets import QLineEdit, QFileDialog
-import qtpy.QtCore as QtCore
 import os.path
+
+import qtpy.QtCore as QtCore
+from qtpy.QtWidgets import QFileDialog, QLineEdit
 
 
 class ClickableLineEdit(QLineEdit):

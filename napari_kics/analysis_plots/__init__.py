@@ -1,9 +1,9 @@
+from importlib import import_module
+from logging import getLogger
+
 import numpy as np
 import pandas as pd
 from pulp import LpMinimize, LpProblem, LpVariable
-from importlib import import_module
-
-from logging import getLogger
 
 log = getLogger(__name__)
 
@@ -218,7 +218,9 @@ def get_argument_parser():
     parser.add_argument(
         "--no-optimize",
         action="store_true",
-        help="Do not run optimization in matching, i.e. match by independent sort order",
+        help=(
+            "Do not run optimization in matching, i.e. match by independent sort order"
+        ),
     )
 
     return parser

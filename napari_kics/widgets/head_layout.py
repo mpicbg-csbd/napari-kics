@@ -1,8 +1,9 @@
-from qtpy.QtSvg import QSvgWidget
 from pathlib import Path
-from qtpy.QtWidgets import QLabel, QVBoxLayout, QHBoxLayout
-from qtpy.QtGui import QFont
+
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QFont
+from qtpy.QtSvg import QSvgWidget
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
 
 
 class HeadLayout(QHBoxLayout):

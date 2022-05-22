@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
+import logging
 import sys
+
 from ..analysis_plots import (
     analysis_plots,
     get_argument_parser,
     read_fasta_index,
     read_tsv_data,
 )
-import logging
 
 log = logging.getLogger(__name__)
 

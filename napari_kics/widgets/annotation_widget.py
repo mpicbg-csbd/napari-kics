@@ -1,19 +1,17 @@
-import numpy as np
 import napari
-
+import numpy as np
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QPushButton,
-    QLabel,
-    QSpinBox,
-    QHBoxLayout,
+    QComboBox,
     QDial,
     QFormLayout,
-    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
 )
-from ..utils import get_img
-from qtpy.QtCore import Qt
 
-from ..utils import bbox2shape
+from ..utils import bbox2shape, get_img
 
 
 class AnnotationWidget(QFormLayout):
@@ -140,7 +138,8 @@ class AnnotationWidget(QFormLayout):
         bboxes = [bbox2shape(b) for b in dataframe.loc[:, "_bbox"]]
 
         print(
-            f"[annotate] bboxes, labels and sizes have lengths {len(bboxes), len(labels), len(sizes)}"
+            "[annotate] bboxes, labels and sizes have lengths",
+            f"{len(bboxes), len(labels), len(sizes)}",
         )
         print(f"[annotate] bboxes, labels and sizes are {bboxes, labels, sizes}")
 
