@@ -17,6 +17,7 @@ flake8 = "*"
 black = "*"
 pre-commit = "*"
 isort = "*"
+pytest = "*"
 
 [requires]
 python_version = "3.10"
