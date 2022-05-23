@@ -6,7 +6,7 @@ from skimage import io
 __svg_template = """\
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
- version="1.2"baseProfile="tiny" viewBox="0 0 {width} {height}"
+ version="1.2" baseProfile="tiny" viewBox="0 0 {width} {height}"
  width="{svg_width}" height="{svg_height}">
     <title>{title}</title>
     <desc>{desc}</desc>
