@@ -31,11 +31,22 @@
 
 ## Install
 
+### napari →
+
+Install KICS with `Plugins → Install/Uninstall Plugins…`, enter `KICS` into
+the search field and install the plugin.
+
+
+### pip →
+
 You can install `napari-kics` via [pip]:
 
 ```sh
 pip install napari-kics
 ```
+
+
+### conda →
 
 This will install all required dependencies as well. We recommend installing it in a virtual environment, e.g. using [conda]:
 
