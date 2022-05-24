@@ -20,13 +20,13 @@
 
 ## Table of Contents
 
-- Install
-- Usage
-- Example
-- Citation
-- Maintainer
-- Contributing
-- License
+- [Install](#install)
+- [Usage](#usage)
+- [Example](#example)
+- [Citation](#citation)
+- [License](#license)
+- [Issues](#issues)
+- [Contributing](#contributing)
 
 
 ## Install
