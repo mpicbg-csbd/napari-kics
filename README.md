@@ -3,7 +3,7 @@
 ![napari-kics](https://github.com/mpicbg-csbd/napari-kics/raw/main/docs/banner.png?sanitize=true&raw=true)
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme)
-[![License](https://img.shields.io/pypi/l/napari-kics.svg?color=green)](./LICENSE)
+[![License](https://img.shields.io/pypi/l/napari-kics.svg?color=green)](https://github.com/mpicbg-csbd/napari-kics/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/napari-kics.svg?color=green)](https://pypi.org/project/napari-kics)
 [![Python Version](https://img.shields.io/pypi/pyversions/napari-kics.svg?color=green)](https://python.org)
 [![Python package](https://github.com/mpicbg-csbd/napari-kics/actions/workflows/python-package.yml/badge.svg)](https://github.com/mpicbg-csbd/napari-kics/actions/workflows/python-package.yml)
@@ -11,7 +11,7 @@
 
 > A plugin to estimate chromosome sizes from karyotype images.
 
-![demo animation of napari-kics](./docs/demo.gif?sanitize=true&raw=true)
+![demo animation of napari-kics](https://github.com/mpicbg-csbd/napari-kics/blob/main/docs/demo.gif?sanitize=true&raw=true)
 
 ---
 
