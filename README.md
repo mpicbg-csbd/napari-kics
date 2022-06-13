@@ -91,7 +91,7 @@ karyotype-analysis-plots --example
 
 > Arne Ludwig, Alexandr Dibrov, Gene Myers, Martin Pippel.
 > Estimating chromosome sizes from karyotype images enables validation of
-> *de novo* assemblies. To be published.
+> *de novo* assemblies. bioRxiv. DOI: [10.1101/2022.05.22.492982](https://doi.org/10.1101/2022.05.22.492982).
 
 
 ## License
